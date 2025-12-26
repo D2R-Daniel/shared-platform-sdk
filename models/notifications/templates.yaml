@@ -1,0 +1,567 @@
+# Notification Templates
+# Template definitions for email, SMS, and push notifications
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://platform.example.com/schemas/notifications/templates.yaml"
+title: Notification Templates
+description: Template schemas and predefined templates
+
+definitions:
+  # Template Types
+  TemplateType:
+    type: string
+    enum:
+      - email
+      - sms
+      - push
+      - in_app
+    description: Type of notification template
+
+  # Base Template
+  TemplateBase:
+    type: object
+    required:
+      - id
+      - name
+      - type
+      - category
+    properties:
+      id:
+        type: string
+        pattern: '^[a-z][a-z0-9_-]*$'
+        maxLength: 100
+        description: Unique template identifier
+        example: "user_welcome"
+
+      name:
+        type: string
+        maxLength: 200
+        description: Human-readable template name
+        example: "Welcome Email"
+
+      description:
+        type: string
+        maxLength: 500
+        description: Template description
+
+      type:
+        $ref: '#/definitions/TemplateType'
+
+      category:
+        type: string
+        description: Notification category
+        example: "account"
+
+      version:
+        type: string
+        pattern: '^\d+\.\d+\.\d+$'
+        description: Semantic version
+        example: "1.0.0"
+
+      locale:
+        type: string
+        pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+        description: Template locale
+        example: "en-US"
+
+      variables:
+        type: array
+        items:
+          $ref: '#/definitions/TemplateVariable'
+        description: Required and optional variables
+
+      active:
+        type: boolean
+        default: true
+        description: Whether template is active
+
+      created_at:
+        type: string
+        format: date-time
+
+      updated_at:
+        type: string
+        format: date-time
+
+  # Template Variable
+  TemplateVariable:
+    type: object
+    required:
+      - name
+      - type
+    properties:
+      name:
+        type: string
+        pattern: '^[a-z][a-z0-9_]*$'
+        description: Variable name
+        example: "user_name"
+
+      type:
+        type: string
+        enum:
+          - string
+          - number
+          - boolean
+          - date
+          - datetime
+          - url
+          - currency
+          - array
+          - object
+        description: Variable type
+
+      required:
+        type: boolean
+        default: false
+        description: Whether variable is required
+
+      default:
+        description: Default value if not provided
+
+      description:
+        type: string
+        description: Variable description
+
+      format:
+        type: string
+        description: Format string for dates/numbers
+
+      example:
+        description: Example value for documentation
+
+  # Email Template
+  EmailTemplate:
+    allOf:
+      - $ref: '#/definitions/TemplateBase'
+      - type: object
+        required:
+          - subject
+          - body_html
+        properties:
+          type:
+            const: email
+
+          subject:
+            type: string
+            maxLength: 200
+            description: Email subject line (supports variables)
+            example: "Welcome to {{app_name}}, {{user_name}}!"
+
+          preheader:
+            type: string
+            maxLength: 200
+            description: Email preheader text
+
+          body_html:
+            type: string
+            description: HTML email body
+
+          body_text:
+            type: string
+            description: Plain text fallback
+
+          from_name:
+            type: string
+            description: Sender name override
+
+          from_email:
+            type: string
+            format: email
+            description: Sender email override
+
+          reply_to:
+            type: string
+            format: email
+            description: Reply-to address
+
+          headers:
+            type: object
+            additionalProperties:
+              type: string
+            description: Custom email headers
+
+  # SMS Template
+  SMSTemplate:
+    allOf:
+      - $ref: '#/definitions/TemplateBase'
+      - type: object
+        required:
+          - message
+        properties:
+          type:
+            const: sms
+
+          message:
+            type: string
+            maxLength: 1600
+            description: SMS message content (supports variables)
+            example: "Your verification code is {{code}}. Valid for {{expiry_minutes}} minutes."
+
+          sender_id:
+            type: string
+            maxLength: 11
+            description: Sender ID (alphanumeric, max 11 chars)
+
+          unicode:
+            type: boolean
+            default: false
+            description: Whether message contains unicode
+
+          segments:
+            type: integer
+            description: Estimated number of SMS segments
+
+  # Push Template
+  PushTemplate:
+    allOf:
+      - $ref: '#/definitions/TemplateBase'
+      - type: object
+        required:
+          - title
+          - body
+        properties:
+          type:
+            const: push
+
+          title:
+            type: string
+            maxLength: 100
+            description: Push notification title
+            example: "New message from {{sender_name}}"
+
+          body:
+            type: string
+            maxLength: 500
+            description: Push notification body
+            example: "{{message_preview}}"
+
+          image_url:
+            type: string
+            format: uri
+            description: Image URL for rich notifications
+
+          icon:
+            type: string
+            description: Notification icon
+
+          badge:
+            type: integer
+            description: Badge count
+
+          sound:
+            type: string
+            description: Notification sound
+
+          click_action:
+            type: string
+            description: Action when tapped
+
+          data:
+            type: object
+            additionalProperties: true
+            description: Custom data payload template
+
+          android:
+            type: object
+            properties:
+              channel_id:
+                type: string
+              priority:
+                type: string
+                enum: [default, high, low]
+              color:
+                type: string
+
+          ios:
+            type: object
+            properties:
+              category_id:
+                type: string
+              interruption_level:
+                type: string
+                enum: [passive, active, time-sensitive, critical]
+
+  # In-App Template
+  InAppTemplate:
+    allOf:
+      - $ref: '#/definitions/TemplateBase'
+      - type: object
+        required:
+          - title
+        properties:
+          type:
+            const: in_app
+
+          title:
+            type: string
+            maxLength: 100
+            description: Notification title
+
+          body:
+            type: string
+            maxLength: 500
+            description: Notification body
+
+          icon:
+            type: string
+            description: Icon identifier
+
+          image_url:
+            type: string
+            format: uri
+
+          action_url:
+            type: string
+            description: URL or deep link when clicked
+
+          action_label:
+            type: string
+            description: Action button label
+
+          dismissible:
+            type: boolean
+            default: true
+
+          persistent:
+            type: boolean
+            default: false
+            description: Show until explicitly dismissed
+
+          style:
+            type: string
+            enum:
+              - default
+              - success
+              - warning
+              - error
+              - info
+            default: default
+
+# Predefined Templates
+templates:
+  # Account Templates
+  account:
+    - id: user_welcome
+      name: Welcome Email
+      type: email
+      category: account
+      description: Sent when a new user registers
+      subject: "Welcome to {{app_name}}!"
+      variables:
+        - name: user_name
+          type: string
+          required: true
+          description: User's display name
+        - name: app_name
+          type: string
+          required: true
+          description: Application name
+        - name: login_url
+          type: url
+          required: true
+          description: Login page URL
+        - name: support_email
+          type: string
+          required: false
+          default: "support@example.com"
+
+    - id: email_verification
+      name: Email Verification
+      type: email
+      category: account
+      description: Email verification link
+      subject: "Verify your email address"
+      variables:
+        - name: user_name
+          type: string
+          required: true
+        - name: verification_url
+          type: url
+          required: true
+        - name: expiry_hours
+          type: number
+          required: true
+          default: 24
+
+    - id: password_reset
+      name: Password Reset
+      type: email
+      category: security
+      description: Password reset link
+      subject: "Reset your password"
+      variables:
+        - name: user_name
+          type: string
+          required: true
+        - name: reset_url
+          type: url
+          required: true
+        - name: expiry_hours
+          type: number
+          required: true
+          default: 1
+
+    - id: password_changed
+      name: Password Changed
+      type: email
+      category: security
+      description: Password change confirmation
+      subject: "Your password was changed"
+      variables:
+        - name: user_name
+          type: string
+          required: true
+        - name: changed_at
+          type: datetime
+          required: true
+        - name: ip_address
+          type: string
+          required: false
+
+  # OTP Templates
+  otp:
+    - id: otp_sms
+      name: SMS OTP
+      type: sms
+      category: security
+      description: One-time password via SMS
+      message: "{{code}} is your {{app_name}} verification code. Valid for {{expiry_minutes}} min. Don't share this code."
+      variables:
+        - name: code
+          type: string
+          required: true
+          description: 6-digit OTP code
+        - name: app_name
+          type: string
+          required: true
+        - name: expiry_minutes
+          type: number
+          required: true
+          default: 10
+
+    - id: otp_email
+      name: Email OTP
+      type: email
+      category: security
+      description: One-time password via email
+      subject: "Your verification code: {{code}}"
+      variables:
+        - name: code
+          type: string
+          required: true
+        - name: expiry_minutes
+          type: number
+          required: true
+          default: 10
+
+  # Invitation Templates
+  invitation:
+    - id: user_invitation
+      name: User Invitation
+      type: email
+      category: account
+      description: Invite a new user to the platform
+      subject: "{{inviter_name}} invited you to join {{tenant_name}}"
+      variables:
+        - name: inviter_name
+          type: string
+          required: true
+        - name: tenant_name
+          type: string
+          required: true
+        - name: invitation_url
+          type: url
+          required: true
+        - name: expiry_days
+          type: number
+          required: true
+          default: 7
+        - name: custom_message
+          type: string
+          required: false
+
+  # Notification Templates
+  notifications:
+    - id: new_login_alert
+      name: New Login Alert
+      type: push
+      category: security
+      description: Alert when login from new device
+      title: "New login detected"
+      body: "New login from {{device}} in {{location}}"
+      variables:
+        - name: device
+          type: string
+          required: true
+        - name: location
+          type: string
+          required: true
+        - name: time
+          type: datetime
+          required: true
+
+# Template Categories
+categories:
+  account:
+    name: Account
+    description: Account-related notifications
+    default_channels: [email, in_app]
+    required: false
+
+  security:
+    name: Security
+    description: Security alerts and OTP codes
+    default_channels: [email, sms, push]
+    required: true  # Cannot be disabled
+
+  marketing:
+    name: Marketing
+    description: Promotional content
+    default_channels: [email]
+    required: false
+
+  updates:
+    name: Product Updates
+    description: Product news and updates
+    default_channels: [email, in_app]
+    required: false
+
+  team:
+    name: Team Activity
+    description: Team and collaboration notifications
+    default_channels: [email, push, in_app]
+    required: false
+
+# Localization
+localization:
+  supported_locales:
+    - en-US
+    - en-GB
+    - es-ES
+    - fr-FR
+    - de-DE
+    - pt-BR
+    - ja-JP
+    - zh-CN
+
+  fallback_locale: en-US
+
+  # Locale-specific formatting
+  formats:
+    en-US:
+      date: "MM/DD/YYYY"
+      time: "h:mm A"
+      datetime: "MM/DD/YYYY h:mm A"
+      currency: "${{amount}}"
+
+    en-GB:
+      date: "DD/MM/YYYY"
+      time: "HH:mm"
+      datetime: "DD/MM/YYYY HH:mm"
+      currency: "£{{amount}}"
+
+    de-DE:
+      date: "DD.MM.YYYY"
+      time: "HH:mm"
+      datetime: "DD.MM.YYYY HH:mm"
+      currency: "{{amount}} €"

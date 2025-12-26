@@ -1,0 +1,335 @@
+{
+  "type": "record",
+  "name": "EmailNotificationEvent",
+  "namespace": "com.platform.events.notifications",
+  "doc": "Event triggered when an email notification should be sent",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Unique event identifier (UUID)"
+    },
+    {
+      "name": "event_type",
+      "type": {
+        "type": "enum",
+        "name": "EmailEventType",
+        "symbols": [
+          "TRANSACTIONAL",
+          "MARKETING",
+          "SYSTEM",
+          "DIGEST"
+        ]
+      },
+      "doc": "Type of email event"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Event timestamp in milliseconds since epoch"
+    },
+    {
+      "name": "tenant_id",
+      "type": "string",
+      "doc": "Tenant/organization identifier"
+    },
+    {
+      "name": "recipient",
+      "type": {
+        "type": "record",
+        "name": "EmailRecipient",
+        "fields": [
+          {
+            "name": "user_id",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "User ID if recipient is a platform user"
+          },
+          {
+            "name": "email",
+            "type": "string",
+            "doc": "Recipient email address"
+          },
+          {
+            "name": "name",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Recipient display name"
+          },
+          {
+            "name": "locale",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Preferred locale for email content"
+          }
+        ]
+      },
+      "doc": "Email recipient information"
+    },
+    {
+      "name": "cc",
+      "type": {
+        "type": "array",
+        "items": "EmailRecipient",
+        "default": []
+      },
+      "doc": "CC recipients"
+    },
+    {
+      "name": "bcc",
+      "type": {
+        "type": "array",
+        "items": "EmailRecipient",
+        "default": []
+      },
+      "doc": "BCC recipients"
+    },
+    {
+      "name": "template",
+      "type": {
+        "type": "record",
+        "name": "EmailTemplate",
+        "fields": [
+          {
+            "name": "template_id",
+            "type": "string",
+            "doc": "Template identifier"
+          },
+          {
+            "name": "version",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Template version (uses latest if not specified)"
+          },
+          {
+            "name": "variables",
+            "type": {
+              "type": "map",
+              "values": "string"
+            },
+            "doc": "Template variables for personalization"
+          }
+        ]
+      },
+      "doc": "Email template configuration"
+    },
+    {
+      "name": "content_override",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "EmailContent",
+          "fields": [
+            {
+              "name": "subject",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Override subject line"
+            },
+            {
+              "name": "body_html",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Override HTML body"
+            },
+            {
+              "name": "body_text",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Override plain text body"
+            }
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "Optional content override (bypasses template)"
+    },
+    {
+      "name": "attachments",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "EmailAttachment",
+          "fields": [
+            {
+              "name": "filename",
+              "type": "string",
+              "doc": "Attachment filename"
+            },
+            {
+              "name": "content_type",
+              "type": "string",
+              "doc": "MIME type"
+            },
+            {
+              "name": "content_url",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "URL to fetch attachment content"
+            },
+            {
+              "name": "content_base64",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Base64 encoded content (for small attachments)"
+            },
+            {
+              "name": "size_bytes",
+              "type": "long",
+              "doc": "Attachment size in bytes"
+            }
+          ]
+        },
+        "default": []
+      },
+      "doc": "Email attachments"
+    },
+    {
+      "name": "priority",
+      "type": {
+        "type": "enum",
+        "name": "EmailPriority",
+        "symbols": ["LOW", "NORMAL", "HIGH", "URGENT"]
+      },
+      "default": "NORMAL",
+      "doc": "Email priority level"
+    },
+    {
+      "name": "category",
+      "type": "string",
+      "doc": "Notification category for preference matching"
+    },
+    {
+      "name": "tracking",
+      "type": {
+        "type": "record",
+        "name": "EmailTracking",
+        "fields": [
+          {
+            "name": "enable_open_tracking",
+            "type": "boolean",
+            "default": true,
+            "doc": "Track email opens"
+          },
+          {
+            "name": "enable_click_tracking",
+            "type": "boolean",
+            "default": true,
+            "doc": "Track link clicks"
+          },
+          {
+            "name": "campaign_id",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Marketing campaign ID"
+          },
+          {
+            "name": "tags",
+            "type": {
+              "type": "array",
+              "items": "string"
+            },
+            "default": [],
+            "doc": "Tracking tags"
+          }
+        ]
+      },
+      "doc": "Email tracking configuration"
+    },
+    {
+      "name": "scheduling",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "EmailScheduling",
+          "fields": [
+            {
+              "name": "send_at",
+              "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+              },
+              "doc": "Scheduled send time"
+            },
+            {
+              "name": "timezone",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Timezone for send time"
+            }
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "Optional scheduling (immediate if not specified)"
+    },
+    {
+      "name": "reply_to",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Reply-to email address"
+    },
+    {
+      "name": "headers",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {},
+      "doc": "Custom email headers"
+    },
+    {
+      "name": "metadata",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {},
+      "doc": "Custom metadata for tracking/debugging"
+    },
+    {
+      "name": "correlation_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Correlation ID for request tracing"
+    },
+    {
+      "name": "source",
+      "type": {
+        "type": "record",
+        "name": "EventSource",
+        "fields": [
+          {
+            "name": "service",
+            "type": "string",
+            "doc": "Service that produced the event"
+          },
+          {
+            "name": "action",
+            "type": "string",
+            "doc": "Action that triggered the notification"
+          },
+          {
+            "name": "resource_type",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Type of resource involved"
+          },
+          {
+            "name": "resource_id",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "ID of resource involved"
+          }
+        ]
+      },
+      "doc": "Event source information"
+    }
+  ]
+}

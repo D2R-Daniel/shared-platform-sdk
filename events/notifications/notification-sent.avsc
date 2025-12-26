@@ -1,0 +1,253 @@
+{
+  "type": "record",
+  "name": "NotificationSentEvent",
+  "namespace": "com.platform.events.notifications",
+  "doc": "Event emitted when a notification has been sent (delivery confirmation)",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Unique event identifier (UUID)"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Event timestamp in milliseconds since epoch"
+    },
+    {
+      "name": "original_event_id",
+      "type": "string",
+      "doc": "ID of the original notification request event"
+    },
+    {
+      "name": "notification_type",
+      "type": {
+        "type": "enum",
+        "name": "NotificationType",
+        "symbols": ["EMAIL", "SMS", "PUSH", "IN_APP", "WEBHOOK"]
+      },
+      "doc": "Type of notification that was sent"
+    },
+    {
+      "name": "tenant_id",
+      "type": "string",
+      "doc": "Tenant/organization identifier"
+    },
+    {
+      "name": "recipient",
+      "type": {
+        "type": "record",
+        "name": "NotificationRecipient",
+        "fields": [
+          {
+            "name": "user_id",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "User ID if applicable"
+          },
+          {
+            "name": "destination",
+            "type": "string",
+            "doc": "Destination (email, phone, device token, etc.)"
+          }
+        ]
+      },
+      "doc": "Notification recipient"
+    },
+    {
+      "name": "status",
+      "type": {
+        "type": "enum",
+        "name": "DeliveryStatus",
+        "symbols": [
+          "SENT",
+          "DELIVERED",
+          "FAILED",
+          "BOUNCED",
+          "REJECTED",
+          "DEFERRED",
+          "EXPIRED"
+        ]
+      },
+      "doc": "Delivery status"
+    },
+    {
+      "name": "status_details",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Additional status details or error message"
+    },
+    {
+      "name": "provider",
+      "type": {
+        "type": "record",
+        "name": "ProviderInfo",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string",
+            "doc": "Provider name (e.g., SendGrid, Twilio, FCM)"
+          },
+          {
+            "name": "message_id",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Provider's message ID"
+          },
+          {
+            "name": "response_code",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Provider response code"
+          },
+          {
+            "name": "response_message",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Provider response message"
+          }
+        ]
+      },
+      "doc": "Delivery provider information"
+    },
+    {
+      "name": "timing",
+      "type": {
+        "type": "record",
+        "name": "DeliveryTiming",
+        "fields": [
+          {
+            "name": "queued_at",
+            "type": {
+              "type": "long",
+              "logicalType": "timestamp-millis"
+            },
+            "doc": "When notification was queued"
+          },
+          {
+            "name": "sent_at",
+            "type": [
+              "null",
+              {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+              }
+            ],
+            "default": null,
+            "doc": "When notification was sent to provider"
+          },
+          {
+            "name": "delivered_at",
+            "type": [
+              "null",
+              {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+              }
+            ],
+            "default": null,
+            "doc": "When notification was delivered (if confirmed)"
+          },
+          {
+            "name": "processing_time_ms",
+            "type": "long",
+            "doc": "Total processing time in milliseconds"
+          }
+        ]
+      },
+      "doc": "Delivery timing information"
+    },
+    {
+      "name": "retry_info",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "RetryInfo",
+          "fields": [
+            {
+              "name": "attempt_number",
+              "type": "int",
+              "doc": "Current attempt number (1 = first attempt)"
+            },
+            {
+              "name": "max_attempts",
+              "type": "int",
+              "doc": "Maximum number of attempts"
+            },
+            {
+              "name": "next_retry_at",
+              "type": [
+                "null",
+                {
+                  "type": "long",
+                  "logicalType": "timestamp-millis"
+                }
+              ],
+              "default": null,
+              "doc": "When next retry will occur (if applicable)"
+            },
+            {
+              "name": "retry_reason",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Reason for retry"
+            }
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "Retry information (if this is a retry attempt)"
+    },
+    {
+      "name": "template_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Template ID used for the notification"
+    },
+    {
+      "name": "category",
+      "type": "string",
+      "doc": "Notification category"
+    },
+    {
+      "name": "metadata",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {},
+      "doc": "Custom metadata from original request"
+    },
+    {
+      "name": "correlation_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Correlation ID for request tracing"
+    },
+    {
+      "name": "source",
+      "type": {
+        "type": "record",
+        "name": "SentEventSource",
+        "fields": [
+          {
+            "name": "service",
+            "type": "string",
+            "doc": "Service that processed the notification"
+          },
+          {
+            "name": "original_service",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Service that originally requested the notification"
+          }
+        ]
+      },
+      "doc": "Event source information"
+    }
+  ]
+}

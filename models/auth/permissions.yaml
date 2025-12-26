@@ -1,0 +1,315 @@
+# Permission Definitions
+# Fine-grained permission system for the platform
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://platform.example.com/schemas/auth/permissions.yaml"
+title: Permission Definitions
+description: |
+  Platform permission definitions following resource:action pattern.
+  Permissions are granted through roles and can be checked at runtime.
+
+definitions:
+  # Permission identifier pattern
+  PermissionId:
+    type: string
+    pattern: "^[a-z_]+:[a-z_*]+$"
+    description: |
+      Permission identifier in resource:action format.
+      Use * for wildcard (e.g., users:* for all user actions)
+    examples:
+      - "users:read"
+      - "users:write"
+      - "users:*"
+      - "*"
+
+  # Action types
+  Action:
+    type: string
+    enum:
+      - create
+      - read
+      - update
+      - delete
+      - list
+      - export
+      - import
+      - assign
+      - manage
+      - "*"
+    description: Standard CRUD and extended actions
+
+  # Permission definition
+  Permission:
+    type: object
+    required:
+      - id
+      - resource
+      - action
+      - name
+    properties:
+      id:
+        $ref: '#/definitions/PermissionId'
+      resource:
+        type: string
+        description: Resource this permission applies to
+      action:
+        $ref: '#/definitions/Action'
+      name:
+        type: string
+        description: Human-readable permission name
+      description:
+        type: string
+        description: What this permission allows
+      scope:
+        type: string
+        enum:
+          - global      # Applies to all resources of this type
+          - tenant      # Applies within user's tenant
+          - team        # Applies within user's team
+          - own         # Applies only to user's own resources
+        default: tenant
+        description: Scope of the permission
+
+# Permission Categories
+permissions:
+  # User Management
+  users:
+    - id: "users:create"
+      resource: users
+      action: create
+      name: Create Users
+      description: Create new user accounts
+      scope: tenant
+
+    - id: "users:read"
+      resource: users
+      action: read
+      name: View Users
+      description: View user profiles and details
+      scope: tenant
+
+    - id: "users:update"
+      resource: users
+      action: update
+      name: Update Users
+      description: Modify user accounts
+      scope: tenant
+
+    - id: "users:delete"
+      resource: users
+      action: delete
+      name: Delete Users
+      description: Remove user accounts
+      scope: tenant
+
+    - id: "users:list"
+      resource: users
+      action: list
+      name: List Users
+      description: View user listings
+      scope: tenant
+
+    - id: "users:invite"
+      resource: users
+      action: create
+      name: Invite Users
+      description: Send user invitations
+      scope: tenant
+
+    - id: "users:import"
+      resource: users
+      action: import
+      name: Import Users
+      description: Bulk import users
+      scope: tenant
+
+    - id: "users:export"
+      resource: users
+      action: export
+      name: Export Users
+      description: Export user data
+      scope: tenant
+
+  # Profile Management
+  profile:
+    - id: "profile:read"
+      resource: profile
+      action: read
+      name: View Own Profile
+      description: View own profile information
+      scope: own
+
+    - id: "profile:update"
+      resource: profile
+      action: update
+      name: Update Own Profile
+      description: Modify own profile information
+      scope: own
+
+  # Role Management
+  roles:
+    - id: "roles:read"
+      resource: roles
+      action: read
+      name: View Roles
+      description: View role definitions
+      scope: tenant
+
+    - id: "roles:create"
+      resource: roles
+      action: create
+      name: Create Roles
+      description: Create custom roles
+      scope: tenant
+
+    - id: "roles:update"
+      resource: roles
+      action: update
+      name: Update Roles
+      description: Modify role definitions
+      scope: tenant
+
+    - id: "roles:delete"
+      resource: roles
+      action: delete
+      name: Delete Roles
+      description: Remove custom roles
+      scope: tenant
+
+    - id: "roles:assign"
+      resource: roles
+      action: assign
+      name: Assign Roles
+      description: Assign roles to users
+      scope: tenant
+
+  # Team Management
+  team:
+    - id: "team:read"
+      resource: team
+      action: read
+      name: View Team
+      description: View team members
+      scope: team
+
+    - id: "team:manage"
+      resource: team
+      action: manage
+      name: Manage Team
+      description: Add/remove team members
+      scope: team
+
+  # Settings
+  settings:
+    - id: "settings:read"
+      resource: settings
+      action: read
+      name: View Settings
+      description: View platform settings
+      scope: tenant
+
+    - id: "settings:update"
+      resource: settings
+      action: update
+      name: Update Settings
+      description: Modify platform settings
+      scope: tenant
+
+  # Reports
+  reports:
+    - id: "reports:read"
+      resource: reports
+      action: read
+      name: View Reports
+      description: Access reports and analytics
+      scope: tenant
+
+    - id: "reports:create"
+      resource: reports
+      action: create
+      name: Create Reports
+      description: Generate custom reports
+      scope: tenant
+
+    - id: "reports:export"
+      resource: reports
+      action: export
+      name: Export Reports
+      description: Export report data
+      scope: tenant
+
+  # Audit Logs
+  audit:
+    - id: "audit:read"
+      resource: audit
+      action: read
+      name: View Audit Logs
+      description: Access audit trail
+      scope: tenant
+
+  # Notifications
+  notifications:
+    - id: "notifications:read"
+      resource: notifications
+      action: read
+      name: View Notifications
+      description: View notifications
+      scope: own
+
+    - id: "notifications:manage"
+      resource: notifications
+      action: manage
+      name: Manage Notifications
+      description: Configure notification settings
+      scope: tenant
+
+    - id: "notifications:update_preferences"
+      resource: notifications
+      action: update
+      name: Update Notification Preferences
+      description: Update personal notification preferences
+      scope: own
+
+  # Public Access
+  public:
+    - id: "public:read"
+      resource: public
+      action: read
+      name: View Public Content
+      description: Access public/unauthenticated content
+      scope: global
+
+# Permission Helpers
+helpers:
+  # Check if permission matches (including wildcards)
+  # Example: "users:*" matches "users:read"
+  match_pattern: |
+    function matchPermission(required, granted) {
+      if (granted === "*") return true;
+      if (granted === required) return true;
+
+      const [gResource, gAction] = granted.split(':');
+      const [rResource, rAction] = required.split(':');
+
+      if (gResource !== rResource && gResource !== '*') return false;
+      if (gAction !== rAction && gAction !== '*') return false;
+
+      return true;
+    }
+
+  # Get effective permissions for a role (including inherited)
+  resolve_permissions: |
+    function resolvePermissions(role, roleDefinitions) {
+      const permissions = new Set(role.permissions);
+
+      for (const inheritedRole of role.inherits_from || []) {
+        const parent = roleDefinitions[inheritedRole];
+        if (parent) {
+          for (const perm of resolvePermissions(parent, roleDefinitions)) {
+            permissions.add(perm);
+          }
+        }
+      }
+
+      return Array.from(permissions);
+    }

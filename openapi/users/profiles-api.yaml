@@ -1,0 +1,789 @@
+openapi: 3.0.3
+info:
+  title: User Profile API
+  description: |
+    User profile management endpoints.
+
+    Features:
+    - View and update own profile
+    - Manage profile picture/avatar
+    - Update preferences and settings
+    - Password management
+  version: 1.0.0
+  contact:
+    name: Platform Team
+
+servers:
+  - url: '{baseUrl}/api/v1'
+    variables:
+      baseUrl:
+        default: https://api.example.com
+        description: Base API URL
+
+tags:
+  - name: Profile
+    description: Current user profile management
+  - name: Avatar
+    description: Profile picture management
+  - name: Preferences
+    description: User preferences
+  - name: Security
+    description: Password and security settings
+
+security:
+  - bearerAuth: []
+
+paths:
+  /me:
+    get:
+      operationId: getMyProfile
+      summary: Get current user profile
+      description: Retrieve the authenticated user's profile
+      tags:
+        - Profile
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    patch:
+      operationId: updateMyProfile
+      summary: Update current user profile
+      description: Update the authenticated user's profile information
+      tags:
+        - Profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProfileRequest'
+      responses:
+        '200':
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /me/avatar:
+    post:
+      operationId: uploadAvatar
+      summary: Upload profile picture
+      description: Upload a new profile picture/avatar
+      tags:
+        - Avatar
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, WebP)
+      responses:
+        '200':
+          description: Avatar uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  avatar_url:
+                    type: string
+                    format: uri
+                    description: URL of the uploaded avatar
+        '400':
+          description: Invalid file format or size
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    delete:
+      operationId: deleteAvatar
+      summary: Remove profile picture
+      description: Delete the current profile picture
+      tags:
+        - Avatar
+      responses:
+        '204':
+          description: Avatar deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /me/preferences:
+    get:
+      operationId: getPreferences
+      summary: Get user preferences
+      description: Retrieve the authenticated user's preferences
+      tags:
+        - Preferences
+      responses:
+        '200':
+          description: User preferences
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    patch:
+      operationId: updatePreferences
+      summary: Update user preferences
+      description: Update the authenticated user's preferences
+      tags:
+        - Preferences
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePreferencesRequest'
+      responses:
+        '200':
+          description: Preferences updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPreferences'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /me/password:
+    post:
+      operationId: changePassword
+      summary: Change password
+      description: Change the authenticated user's password
+      tags:
+        - Security
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Password changed successfully
+        '400':
+          description: Invalid password or validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /me/email:
+    post:
+      operationId: changeEmail
+      summary: Request email change
+      description: |
+        Request to change email address. Sends verification to new email.
+      tags:
+        - Security
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - new_email
+                - password
+              properties:
+                new_email:
+                  type: string
+                  format: email
+                  description: New email address
+                password:
+                  type: string
+                  format: password
+                  description: Current password for verification
+      responses:
+        '200':
+          description: Verification email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          description: Email already in use
+
+  /me/verify-email:
+    post:
+      operationId: verifyEmail
+      summary: Verify email address
+      description: Verify email using token from verification email
+      tags:
+        - Security
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Verification token from email
+      responses:
+        '200':
+          description: Email verified
+        '400':
+          description: Invalid or expired token
+
+  /me/two-factor:
+    get:
+      operationId: getTwoFactorStatus
+      summary: Get 2FA status
+      description: Get current two-factor authentication status
+      tags:
+        - Security
+      responses:
+        '200':
+          description: 2FA status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      operationId: enableTwoFactor
+      summary: Enable 2FA
+      description: Initialize two-factor authentication setup
+      tags:
+        - Security
+      responses:
+        '200':
+          description: 2FA setup initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwoFactorSetup'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    delete:
+      operationId: disableTwoFactor
+      summary: Disable 2FA
+      description: Disable two-factor authentication
+      tags:
+        - Security
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  format: password
+                code:
+                  type: string
+                  description: 2FA code for verification
+      responses:
+        '200':
+          description: 2FA disabled
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /me/two-factor/verify:
+    post:
+      operationId: verifyTwoFactor
+      summary: Verify 2FA setup
+      description: Complete 2FA setup by verifying a code
+      tags:
+        - Security
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  pattern: '^\d{6}$'
+                  description: 6-digit verification code
+      responses:
+        '200':
+          description: 2FA verified and enabled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  backup_codes:
+                    type: array
+                    items:
+                      type: string
+                    description: One-time backup codes
+        '400':
+          description: Invalid code
+
+  /me/sessions:
+    get:
+      operationId: getMySessions
+      summary: List my active sessions
+      description: Get all active sessions for the current user
+      tags:
+        - Security
+      responses:
+        '200':
+          description: Active sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /me/sessions/{sessionId}:
+    delete:
+      operationId: revokeSession
+      summary: Revoke a session
+      description: End a specific session (logout from a device)
+      tags:
+        - Security
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /me/activity:
+    get:
+      operationId: getMyActivity
+      summary: Get activity log
+      description: Get recent account activity for the current user
+      tags:
+        - Security
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [login, password_change, profile_update, settings_change]
+      responses:
+        '200':
+          description: Activity log
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  activities:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ActivityLogEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    UserProfile:
+      type: object
+      required:
+        - id
+        - email
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        email_verified:
+          type: boolean
+        name:
+          type: string
+        given_name:
+          type: string
+        family_name:
+          type: string
+        picture:
+          type: string
+          format: uri
+        phone:
+          type: string
+        phone_verified:
+          type: boolean
+        bio:
+          type: string
+          maxLength: 500
+        job_title:
+          type: string
+        department:
+          type: string
+        location:
+          type: string
+        website:
+          type: string
+          format: uri
+        social_links:
+          type: object
+          properties:
+            linkedin:
+              type: string
+              format: uri
+            twitter:
+              type: string
+            github:
+              type: string
+        roles:
+          type: array
+          items:
+            type: string
+        tenant_id:
+          type: string
+          format: uuid
+        tenant_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateProfileRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        given_name:
+          type: string
+          maxLength: 50
+        family_name:
+          type: string
+          maxLength: 50
+        phone:
+          type: string
+        bio:
+          type: string
+          maxLength: 500
+        job_title:
+          type: string
+          maxLength: 100
+        department:
+          type: string
+          maxLength: 100
+        location:
+          type: string
+          maxLength: 100
+        website:
+          type: string
+          format: uri
+        social_links:
+          type: object
+          properties:
+            linkedin:
+              type: string
+              format: uri
+            twitter:
+              type: string
+            github:
+              type: string
+
+    UserPreferences:
+      type: object
+      properties:
+        locale:
+          type: string
+          description: Preferred locale
+          example: "en-US"
+        timezone:
+          type: string
+          description: Preferred timezone
+          example: "America/New_York"
+        date_format:
+          type: string
+          enum: [iso, us, eu]
+          description: Date format preference
+        time_format:
+          type: string
+          enum: ["12h", "24h"]
+          description: Time format preference
+        theme:
+          type: string
+          enum: [light, dark, system]
+          description: UI theme preference
+        notifications:
+          $ref: '#/components/schemas/NotificationPreferences'
+        accessibility:
+          type: object
+          properties:
+            high_contrast:
+              type: boolean
+            reduce_motion:
+              type: boolean
+            screen_reader_hints:
+              type: boolean
+
+    NotificationPreferences:
+      type: object
+      properties:
+        email_enabled:
+          type: boolean
+          default: true
+        push_enabled:
+          type: boolean
+          default: true
+        sms_enabled:
+          type: boolean
+          default: false
+        digest_frequency:
+          type: string
+          enum: [realtime, daily, weekly, never]
+          default: realtime
+        categories:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              email:
+                type: boolean
+              push:
+                type: boolean
+              sms:
+                type: boolean
+
+    UpdatePreferencesRequest:
+      type: object
+      properties:
+        locale:
+          type: string
+        timezone:
+          type: string
+        date_format:
+          type: string
+          enum: [iso, us, eu]
+        time_format:
+          type: string
+          enum: ["12h", "24h"]
+        theme:
+          type: string
+          enum: [light, dark, system]
+        notifications:
+          $ref: '#/components/schemas/NotificationPreferences'
+        accessibility:
+          type: object
+          properties:
+            high_contrast:
+              type: boolean
+            reduce_motion:
+              type: boolean
+            screen_reader_hints:
+              type: boolean
+
+    ChangePasswordRequest:
+      type: object
+      required:
+        - current_password
+        - new_password
+      properties:
+        current_password:
+          type: string
+          format: password
+          description: Current password
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+          description: New password (min 8 chars, must meet complexity requirements)
+
+    TwoFactorStatus:
+      type: object
+      properties:
+        enabled:
+          type: boolean
+        method:
+          type: string
+          enum: [totp, sms]
+        verified_at:
+          type: string
+          format: date-time
+        backup_codes_remaining:
+          type: integer
+
+    TwoFactorSetup:
+      type: object
+      properties:
+        secret:
+          type: string
+          description: TOTP secret (base32 encoded)
+        qr_code:
+          type: string
+          description: QR code image (base64 data URI)
+        manual_entry_key:
+          type: string
+          description: Key for manual entry
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_agent:
+          type: string
+        ip_address:
+          type: string
+        location:
+          type: string
+        device_type:
+          type: string
+          enum: [desktop, mobile, tablet, unknown]
+        browser:
+          type: string
+        os:
+          type: string
+        is_current:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        last_active_at:
+          type: string
+          format: date-time
+
+    ActivityLogEntry:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum:
+            - login
+            - logout
+            - password_change
+            - email_change
+            - profile_update
+            - settings_change
+            - 2fa_enabled
+            - 2fa_disabled
+            - session_revoked
+        description:
+          type: string
+        ip_address:
+          type: string
+        user_agent:
+          type: string
+        location:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true

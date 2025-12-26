@@ -1,0 +1,463 @@
+openapi: 3.0.3
+info:
+  title: Authentication API
+  description: |
+    OAuth2/OIDC authentication endpoints for the platform.
+
+    This API provides:
+    - Token-based authentication (OAuth2)
+    - Token refresh and revocation
+    - Token introspection
+    - User session management
+  version: 1.0.0
+  contact:
+    name: Platform Team
+
+servers:
+  - url: '{baseUrl}/auth'
+    variables:
+      baseUrl:
+        default: https://api.example.com
+        description: Base API URL
+
+tags:
+  - name: Authentication
+    description: Core authentication operations
+  - name: Token Management
+    description: Token lifecycle operations
+  - name: Session
+    description: Session management
+
+paths:
+  /token:
+    post:
+      operationId: createToken
+      summary: Obtain access token
+      description: |
+        Exchange credentials or authorization code for access and refresh tokens.
+        Supports multiple grant types as per OAuth2 specification.
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+      responses:
+        '200':
+          description: Token successfully issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+
+  /token/refresh:
+    post:
+      operationId: refreshToken
+      summary: Refresh access token
+      description: Exchange a valid refresh token for a new access token
+      tags:
+        - Token Management
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: Valid refresh token
+      responses:
+        '200':
+          description: New token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+
+  /token/revoke:
+    post:
+      operationId: revokeToken
+      summary: Revoke token
+      description: Revoke an access or refresh token
+      tags:
+        - Token Management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Token to revoke
+                token_type_hint:
+                  type: string
+                  enum: [access_token, refresh_token]
+                  description: Hint about token type
+      responses:
+        '200':
+          description: Token revoked successfully
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+
+  /token/introspect:
+    post:
+      operationId: introspectToken
+      summary: Introspect token
+      description: |
+        Validate a token and retrieve its claims.
+        Used by resource servers to validate access tokens.
+      tags:
+        - Token Management
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Token to introspect
+      responses:
+        '200':
+          description: Token introspection result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenIntrospection'
+
+  /userinfo:
+    get:
+      operationId: getUserInfo
+      summary: Get current user info
+      description: Retrieve information about the authenticated user
+      tags:
+        - Authentication
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInfo'
+        '401':
+          description: Invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+
+  /logout:
+    post:
+      operationId: logout
+      summary: Logout user
+      description: End the user's session and revoke all tokens
+      tags:
+        - Session
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Successfully logged out
+        '401':
+          description: Invalid or missing token
+
+  /sessions:
+    get:
+      operationId: listSessions
+      summary: List active sessions
+      description: Get all active sessions for the current user
+      tags:
+        - Session
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of active sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Session'
+
+  /sessions/{sessionId}:
+    delete:
+      operationId: terminateSession
+      summary: Terminate a session
+      description: End a specific session (logout from a device)
+      tags:
+        - Session
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session terminated
+        '404':
+          description: Session not found
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token
+
+  schemas:
+    TokenRequest:
+      type: object
+      required:
+        - grant_type
+      properties:
+        grant_type:
+          type: string
+          enum:
+            - password
+            - refresh_token
+            - authorization_code
+            - client_credentials
+          description: OAuth2 grant type
+        username:
+          type: string
+          description: User's email or username (for password grant)
+        password:
+          type: string
+          format: password
+          description: User's password (for password grant)
+        refresh_token:
+          type: string
+          description: Refresh token (for refresh_token grant)
+        code:
+          type: string
+          description: Authorization code (for authorization_code grant)
+        redirect_uri:
+          type: string
+          format: uri
+          description: Redirect URI (for authorization_code grant)
+        client_id:
+          type: string
+          description: Client application ID
+        client_secret:
+          type: string
+          description: Client application secret
+        scope:
+          type: string
+          description: Requested scopes (space-separated)
+
+    TokenResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+          description: JWT access token
+        token_type:
+          type: string
+          enum: [Bearer]
+          description: Token type (always Bearer)
+        expires_in:
+          type: integer
+          description: Token lifetime in seconds
+          example: 3600
+        refresh_token:
+          type: string
+          description: Refresh token for obtaining new access tokens
+        scope:
+          type: string
+          description: Granted scopes (space-separated)
+        id_token:
+          type: string
+          description: OIDC ID token (if openid scope requested)
+
+    TokenIntrospection:
+      type: object
+      required:
+        - active
+      properties:
+        active:
+          type: boolean
+          description: Whether the token is valid and active
+        scope:
+          type: string
+          description: Scopes associated with the token
+        client_id:
+          type: string
+          description: Client that requested the token
+        username:
+          type: string
+          description: Username of the token owner
+        token_type:
+          type: string
+          description: Type of token
+        exp:
+          type: integer
+          description: Token expiration timestamp (Unix epoch)
+        iat:
+          type: integer
+          description: Token issuance timestamp (Unix epoch)
+        sub:
+          type: string
+          description: Subject (user ID)
+        aud:
+          type: string
+          description: Audience
+        iss:
+          type: string
+          description: Issuer
+        jti:
+          type: string
+          description: Unique token identifier
+
+    UserInfo:
+      type: object
+      required:
+        - sub
+      properties:
+        sub:
+          type: string
+          format: uuid
+          description: User ID
+        email:
+          type: string
+          format: email
+          description: User's email address
+        email_verified:
+          type: boolean
+          description: Whether email is verified
+        name:
+          type: string
+          description: Full name
+        given_name:
+          type: string
+          description: First name
+        family_name:
+          type: string
+          description: Last name
+        picture:
+          type: string
+          format: uri
+          description: Profile picture URL
+        roles:
+          type: array
+          items:
+            type: string
+          description: User's roles
+        permissions:
+          type: array
+          items:
+            type: string
+          description: User's permissions
+        tenant_id:
+          type: string
+          format: uuid
+          description: Tenant/organization ID
+
+    Session:
+      type: object
+      required:
+        - id
+        - created_at
+        - last_active_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Session ID
+        user_agent:
+          type: string
+          description: Browser/client user agent
+        ip_address:
+          type: string
+          description: Client IP address
+        location:
+          type: string
+          description: Approximate location
+        created_at:
+          type: string
+          format: date-time
+          description: Session creation time
+        last_active_at:
+          type: string
+          format: date-time
+          description: Last activity time
+        is_current:
+          type: boolean
+          description: Whether this is the current session
+
+    AuthError:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          enum:
+            - invalid_request
+            - invalid_client
+            - invalid_grant
+            - unauthorized_client
+            - unsupported_grant_type
+            - invalid_scope
+            - access_denied
+            - server_error
+          description: Error code
+        error_description:
+          type: string
+          description: Human-readable error description
+        error_uri:
+          type: string
+          format: uri
+          description: URI with more error information

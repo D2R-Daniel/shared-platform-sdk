@@ -1,0 +1,220 @@
+{
+  "type": "record",
+  "name": "SMSNotificationEvent",
+  "namespace": "com.platform.events.notifications",
+  "doc": "Event triggered when an SMS notification should be sent",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Unique event identifier (UUID)"
+    },
+    {
+      "name": "event_type",
+      "type": {
+        "type": "enum",
+        "name": "SMSEventType",
+        "symbols": [
+          "TRANSACTIONAL",
+          "OTP",
+          "ALERT",
+          "MARKETING"
+        ]
+      },
+      "doc": "Type of SMS event"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Event timestamp in milliseconds since epoch"
+    },
+    {
+      "name": "tenant_id",
+      "type": "string",
+      "doc": "Tenant/organization identifier"
+    },
+    {
+      "name": "recipient",
+      "type": {
+        "type": "record",
+        "name": "SMSRecipient",
+        "fields": [
+          {
+            "name": "user_id",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "User ID if recipient is a platform user"
+          },
+          {
+            "name": "phone_number",
+            "type": "string",
+            "doc": "Phone number in E.164 format (+1234567890)"
+          },
+          {
+            "name": "name",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Recipient name (for logging/tracking)"
+          },
+          {
+            "name": "country_code",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "ISO country code for regional formatting"
+          }
+        ]
+      },
+      "doc": "SMS recipient information"
+    },
+    {
+      "name": "template",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "SMSTemplate",
+          "fields": [
+            {
+              "name": "template_id",
+              "type": "string",
+              "doc": "Template identifier"
+            },
+            {
+              "name": "version",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Template version"
+            },
+            {
+              "name": "variables",
+              "type": {
+                "type": "map",
+                "values": "string"
+              },
+              "doc": "Template variables"
+            }
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "SMS template configuration"
+    },
+    {
+      "name": "message",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Direct message content (if not using template)"
+    },
+    {
+      "name": "priority",
+      "type": {
+        "type": "enum",
+        "name": "SMSPriority",
+        "symbols": ["NORMAL", "HIGH", "URGENT"]
+      },
+      "default": "NORMAL",
+      "doc": "SMS priority level"
+    },
+    {
+      "name": "category",
+      "type": "string",
+      "doc": "Notification category for preference matching"
+    },
+    {
+      "name": "sender_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Sender ID or short code (if supported by provider)"
+    },
+    {
+      "name": "validity_period",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Message validity period in seconds"
+    },
+    {
+      "name": "scheduling",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "SMSScheduling",
+          "fields": [
+            {
+              "name": "send_at",
+              "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+              },
+              "doc": "Scheduled send time"
+            },
+            {
+              "name": "timezone",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Timezone for send time"
+            }
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "Optional scheduling"
+    },
+    {
+      "name": "callback_url",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Webhook URL for delivery status updates"
+    },
+    {
+      "name": "metadata",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {},
+      "doc": "Custom metadata"
+    },
+    {
+      "name": "correlation_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Correlation ID for request tracing"
+    },
+    {
+      "name": "source",
+      "type": {
+        "type": "record",
+        "name": "SMSEventSource",
+        "fields": [
+          {
+            "name": "service",
+            "type": "string",
+            "doc": "Service that produced the event"
+          },
+          {
+            "name": "action",
+            "type": "string",
+            "doc": "Action that triggered the notification"
+          },
+          {
+            "name": "resource_type",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Type of resource involved"
+          },
+          {
+            "name": "resource_id",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "ID of resource involved"
+          }
+        ]
+      },
+      "doc": "Event source information"
+    }
+  ]
+}

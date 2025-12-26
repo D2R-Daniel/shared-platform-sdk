@@ -1,0 +1,172 @@
+# Role Definitions
+# Hierarchical role system for the platform
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://platform.example.com/schemas/auth/roles.yaml"
+title: Role Definitions
+description: |
+  Platform role definitions with hierarchical permissions.
+  Roles are assigned to users and determine their access level.
+
+definitions:
+  # Role identifier enum
+  RoleType:
+    type: string
+    enum:
+      - super_admin
+      - admin
+      - manager
+      - user
+      - guest
+    description: Available role types in the platform
+
+  # Full role definition
+  Role:
+    type: object
+    required:
+      - id
+      - name
+      - level
+      - permissions
+    properties:
+      id:
+        $ref: '#/definitions/RoleType'
+      name:
+        type: string
+        description: Human-readable role name
+      description:
+        type: string
+        description: Role description
+      level:
+        type: integer
+        minimum: 0
+        maximum: 100
+        description: |
+          Hierarchy level (higher = more privileged).
+          Used for permission inheritance.
+      permissions:
+        type: array
+        items:
+          type: string
+        description: Permissions granted by this role
+      inherits_from:
+        type: array
+        items:
+          $ref: '#/definitions/RoleType'
+        description: Roles this role inherits permissions from
+      is_system:
+        type: boolean
+        default: false
+        description: Whether this is a system role (cannot be deleted)
+
+# Predefined Roles
+roles:
+  super_admin:
+    id: super_admin
+    name: Super Administrator
+    description: |
+      Full platform access. Can manage all tenants, users, and system settings.
+      Reserved for platform operators.
+    level: 100
+    is_system: true
+    permissions:
+      - "*"  # All permissions
+    inherits_from: []
+
+  admin:
+    id: admin
+    name: Administrator
+    description: |
+      Full tenant access. Can manage users, settings, and all resources
+      within their tenant.
+    level: 80
+    is_system: true
+    permissions:
+      - "users:*"
+      - "roles:read"
+      - "roles:assign"
+      - "settings:*"
+      - "reports:*"
+      - "audit:read"
+      - "notifications:*"
+    inherits_from:
+      - manager
+
+  manager:
+    id: manager
+    name: Manager
+    description: |
+      Team management access. Can manage team members and view reports
+      for their department.
+    level: 60
+    is_system: true
+    permissions:
+      - "users:read"
+      - "users:invite"
+      - "team:*"
+      - "reports:read"
+      - "reports:export"
+    inherits_from:
+      - user
+
+  user:
+    id: user
+    name: User
+    description: |
+      Standard user access. Can access platform features and manage
+      their own profile.
+    level: 40
+    is_system: true
+    permissions:
+      - "profile:*"
+      - "notifications:read"
+      - "notifications:update_preferences"
+    inherits_from:
+      - guest
+
+  guest:
+    id: guest
+    name: Guest
+    description: |
+      Limited access. Can view public content only.
+      Used for unauthenticated or pending users.
+    level: 10
+    is_system: true
+    permissions:
+      - "public:read"
+    inherits_from: []
+
+# Role Assignment Rules
+assignment_rules:
+  # Who can assign which roles
+  super_admin:
+    can_assign:
+      - super_admin
+      - admin
+      - manager
+      - user
+      - guest
+  admin:
+    can_assign:
+      - admin
+      - manager
+      - user
+      - guest
+  manager:
+    can_assign:
+      - user
+      - guest
+
+# Default Role Configuration
+defaults:
+  # Role assigned to new users (after email verification)
+  new_user: user
+
+  # Role for unverified users
+  unverified_user: guest
+
+  # Role for API service accounts
+  service_account: user
+
+  # Role for the first user in a new tenant
+  tenant_owner: admin

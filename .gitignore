@@ -1,0 +1,39 @@
+# Generated SDKs
+/generated/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node
+node_modules/
+npm-debug.log
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.eggs/
+*.egg-info/
+.venv/
+venv/
+
+# Java
+target/
+*.class
+*.jar
+*.war
+
+# Build artifacts
+dist/
+build/
+*.log
+
+# Documentation build
+docs/api/*.html

@@ -1,0 +1,375 @@
+# User Profile Model
+# Extended profile information for users
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://platform.example.com/schemas/users/profile.yaml"
+title: User Profile Model
+description: Extended profile data and preferences
+
+definitions:
+  # Full User Profile
+  UserProfile:
+    type: object
+    description: Complete user profile with preferences
+    required:
+      - user_id
+    properties:
+      # Link to user
+      user_id:
+        type: string
+        format: uuid
+        description: Reference to user record
+
+      # Extended Bio
+      bio:
+        type: string
+        maxLength: 500
+        description: Short biography or about text
+
+      headline:
+        type: string
+        maxLength: 150
+        description: Professional headline (like LinkedIn)
+        example: "Senior Software Engineer at Acme Corp"
+
+      # Professional Info
+      job_title:
+        type: string
+        maxLength: 100
+        description: Job title
+        example: "Senior Software Engineer"
+
+      department:
+        type: string
+        maxLength: 100
+        description: Department or team name
+        example: "Engineering"
+
+      company:
+        type: string
+        maxLength: 100
+        description: Company name (if different from tenant)
+
+      # Location
+      location:
+        type: string
+        maxLength: 100
+        description: Location (city, country)
+        example: "San Francisco, CA"
+
+      country_code:
+        type: string
+        pattern: '^[A-Z]{2}$'
+        description: ISO 3166-1 alpha-2 country code
+        example: "US"
+
+      # Web Presence
+      website:
+        type: string
+        format: uri
+        maxLength: 255
+        description: Personal website
+
+      social_links:
+        $ref: '#/definitions/SocialLinks'
+
+      # Avatar
+      avatar:
+        $ref: '#/definitions/Avatar'
+
+      # Preferences
+      preferences:
+        $ref: '#/definitions/UserPreferences'
+
+      # Timestamps
+      updated_at:
+        type: string
+        format: date-time
+
+  # Social Links
+  SocialLinks:
+    type: object
+    description: Social media and professional network links
+    properties:
+      linkedin:
+        type: string
+        format: uri
+        description: LinkedIn profile URL
+        example: "https://linkedin.com/in/johndoe"
+
+      twitter:
+        type: string
+        pattern: '^@?[a-zA-Z0-9_]{1,15}$'
+        description: Twitter/X username
+        example: "@johndoe"
+
+      github:
+        type: string
+        pattern: '^[a-zA-Z0-9-]{1,39}$'
+        description: GitHub username
+        example: "johndoe"
+
+      facebook:
+        type: string
+        format: uri
+        description: Facebook profile URL
+
+      instagram:
+        type: string
+        pattern: '^[a-zA-Z0-9_.]{1,30}$'
+        description: Instagram username
+
+  # Avatar Configuration
+  Avatar:
+    type: object
+    description: Profile picture configuration
+    properties:
+      url:
+        type: string
+        format: uri
+        description: Avatar image URL
+
+      thumbnail_url:
+        type: string
+        format: uri
+        description: Thumbnail version URL
+
+      source:
+        type: string
+        enum:
+          - upload        # User uploaded
+          - gravatar      # Gravatar
+          - google        # Google profile
+          - microsoft     # Microsoft profile
+          - initials      # Auto-generated from initials
+        description: Avatar source
+
+      background_color:
+        type: string
+        pattern: '^#[0-9A-Fa-f]{6}$'
+        description: Background color for initials avatar
+        example: "#3B82F6"
+
+  # User Preferences
+  UserPreferences:
+    type: object
+    description: User settings and preferences
+    properties:
+      # Locale & Region
+      locale:
+        type: string
+        pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+        description: Preferred locale (language-region)
+        example: "en-US"
+
+      timezone:
+        type: string
+        description: IANA timezone identifier
+        example: "America/New_York"
+
+      # Date/Time Format
+      date_format:
+        type: string
+        enum:
+          - iso       # 2024-01-15
+          - us        # 01/15/2024
+          - eu        # 15/01/2024
+          - long      # January 15, 2024
+        default: iso
+        description: Date display format
+
+      time_format:
+        type: string
+        enum:
+          - "12h"     # 3:30 PM
+          - "24h"     # 15:30
+        default: "12h"
+        description: Time display format
+
+      first_day_of_week:
+        type: integer
+        minimum: 0
+        maximum: 6
+        default: 0
+        description: First day of week (0=Sunday, 1=Monday, etc.)
+
+      # UI Preferences
+      theme:
+        type: string
+        enum:
+          - light
+          - dark
+          - system
+        default: system
+        description: UI theme preference
+
+      sidebar_collapsed:
+        type: boolean
+        default: false
+        description: Whether sidebar is collapsed by default
+
+      compact_mode:
+        type: boolean
+        default: false
+        description: Use compact UI mode
+
+      # Notification Preferences
+      notifications:
+        $ref: '#/definitions/NotificationPreferences'
+
+      # Accessibility
+      accessibility:
+        $ref: '#/definitions/AccessibilityPreferences'
+
+      # Keyboard Shortcuts
+      keyboard_shortcuts_enabled:
+        type: boolean
+        default: true
+
+      # Custom Settings
+      custom:
+        type: object
+        additionalProperties: true
+        description: Application-specific custom preferences
+
+  # Notification Preferences
+  NotificationPreferences:
+    type: object
+    description: Notification delivery preferences
+    properties:
+      # Global toggles
+      email_enabled:
+        type: boolean
+        default: true
+        description: Receive email notifications
+
+      push_enabled:
+        type: boolean
+        default: true
+        description: Receive push notifications
+
+      sms_enabled:
+        type: boolean
+        default: false
+        description: Receive SMS notifications
+
+      in_app_enabled:
+        type: boolean
+        default: true
+        description: Show in-app notifications
+
+      # Digest Settings
+      digest_frequency:
+        type: string
+        enum:
+          - realtime    # Immediate delivery
+          - hourly      # Hourly digest
+          - daily       # Daily digest
+          - weekly      # Weekly digest
+          - never       # No digests
+        default: realtime
+
+      digest_time:
+        type: string
+        pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+        description: Preferred time for digest (HH:MM)
+        example: "09:00"
+
+      # Do Not Disturb
+      dnd_enabled:
+        type: boolean
+        default: false
+        description: Enable Do Not Disturb
+
+      dnd_start:
+        type: string
+        pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+        description: DND start time
+        example: "22:00"
+
+      dnd_end:
+        type: string
+        pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+        description: DND end time
+        example: "08:00"
+
+      # Category Preferences
+      categories:
+        type: object
+        description: Per-category notification preferences
+        additionalProperties:
+          type: object
+          properties:
+            email:
+              type: boolean
+            push:
+              type: boolean
+            sms:
+              type: boolean
+            in_app:
+              type: boolean
+        example:
+          security:
+            email: true
+            push: true
+            sms: true
+            in_app: true
+          marketing:
+            email: false
+            push: false
+            sms: false
+            in_app: false
+
+  # Accessibility Preferences
+  AccessibilityPreferences:
+    type: object
+    description: Accessibility settings
+    properties:
+      high_contrast:
+        type: boolean
+        default: false
+        description: Use high contrast mode
+
+      reduce_motion:
+        type: boolean
+        default: false
+        description: Reduce animations
+
+      screen_reader_hints:
+        type: boolean
+        default: false
+        description: Enhanced screen reader support
+
+      font_size:
+        type: string
+        enum:
+          - small
+          - medium
+          - large
+          - x-large
+        default: medium
+        description: UI font size
+
+      dyslexia_font:
+        type: boolean
+        default: false
+        description: Use dyslexia-friendly font
+
+      focus_indicators:
+        type: boolean
+        default: true
+        description: Show enhanced focus indicators
+
+# Default Preferences
+defaults:
+  locale: "en-US"
+  timezone: "UTC"
+  date_format: "iso"
+  time_format: "12h"
+  theme: "system"
+  notifications:
+    email_enabled: true
+    push_enabled: true
+    sms_enabled: false
+    in_app_enabled: true
+    digest_frequency: "realtime"

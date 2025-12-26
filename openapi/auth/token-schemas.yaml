@@ -1,0 +1,323 @@
+# JWT Token Schemas
+# These schemas define the structure of JWT claims used across the platform
+
+openapi: 3.0.3
+info:
+  title: Token Schemas
+  description: JWT token claim structures and validation schemas
+  version: 1.0.0
+
+components:
+  schemas:
+    # Standard JWT Claims (RFC 7519)
+    JWTClaims:
+      type: object
+      description: Standard JWT claims present in all tokens
+      required:
+        - iss
+        - sub
+        - aud
+        - exp
+        - iat
+        - jti
+      properties:
+        iss:
+          type: string
+          description: Issuer - URL of the authentication server
+          example: "https://auth.example.com"
+        sub:
+          type: string
+          format: uuid
+          description: Subject - User ID
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        aud:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: Audience - Intended recipient(s) of the token
+          example: "https://api.example.com"
+        exp:
+          type: integer
+          description: Expiration time (Unix timestamp)
+          example: 1735689600
+        iat:
+          type: integer
+          description: Issued at time (Unix timestamp)
+          example: 1735686000
+        nbf:
+          type: integer
+          description: Not before time (Unix timestamp)
+        jti:
+          type: string
+          description: JWT ID - Unique token identifier
+          example: "abc123-def456"
+
+    # Access Token Claims
+    AccessTokenClaims:
+      allOf:
+        - $ref: '#/components/schemas/JWTClaims'
+        - type: object
+          description: Claims specific to access tokens
+          required:
+            - type
+            - scope
+          properties:
+            type:
+              type: string
+              enum: [access]
+              description: Token type identifier
+            scope:
+              type: string
+              description: Space-separated list of granted scopes
+              example: "openid profile email read:users write:users"
+            client_id:
+              type: string
+              description: OAuth2 client ID that requested the token
+            tenant_id:
+              type: string
+              format: uuid
+              description: Tenant/organization ID
+            roles:
+              type: array
+              items:
+                type: string
+              description: User's roles
+              example: ["admin", "user"]
+            permissions:
+              type: array
+              items:
+                type: string
+              description: Computed permissions based on roles
+              example: ["users:read", "users:write", "reports:read"]
+            email:
+              type: string
+              format: email
+              description: User's email address
+            email_verified:
+              type: boolean
+              description: Whether user's email is verified
+            name:
+              type: string
+              description: User's display name
+            session_id:
+              type: string
+              format: uuid
+              description: Associated session ID
+
+    # Refresh Token Claims
+    RefreshTokenClaims:
+      allOf:
+        - $ref: '#/components/schemas/JWTClaims'
+        - type: object
+          description: Claims specific to refresh tokens
+          required:
+            - type
+          properties:
+            type:
+              type: string
+              enum: [refresh]
+              description: Token type identifier
+            scope:
+              type: string
+              description: Original granted scopes
+            session_id:
+              type: string
+              format: uuid
+              description: Associated session ID
+            family_id:
+              type: string
+              description: Token family ID for rotation detection
+
+    # ID Token Claims (OIDC)
+    IDTokenClaims:
+      allOf:
+        - $ref: '#/components/schemas/JWTClaims'
+        - type: object
+          description: OIDC ID token claims
+          properties:
+            auth_time:
+              type: integer
+              description: Time of authentication (Unix timestamp)
+            nonce:
+              type: string
+              description: Nonce from authorization request
+            acr:
+              type: string
+              description: Authentication Context Class Reference
+            amr:
+              type: array
+              items:
+                type: string
+              description: Authentication Methods References
+              example: ["pwd", "mfa"]
+            azp:
+              type: string
+              description: Authorized party (client_id)
+            at_hash:
+              type: string
+              description: Access token hash
+            # Standard profile claims
+            name:
+              type: string
+              description: Full name
+            given_name:
+              type: string
+              description: First name
+            family_name:
+              type: string
+              description: Last name
+            middle_name:
+              type: string
+              description: Middle name
+            nickname:
+              type: string
+              description: Casual name
+            preferred_username:
+              type: string
+              description: Preferred username
+            profile:
+              type: string
+              format: uri
+              description: Profile page URL
+            picture:
+              type: string
+              format: uri
+              description: Profile picture URL
+            website:
+              type: string
+              format: uri
+              description: User's website
+            email:
+              type: string
+              format: email
+              description: Email address
+            email_verified:
+              type: boolean
+              description: Is email verified
+            gender:
+              type: string
+              description: Gender
+            birthdate:
+              type: string
+              format: date
+              description: Birthday (YYYY-MM-DD)
+            zoneinfo:
+              type: string
+              description: Timezone
+              example: "America/New_York"
+            locale:
+              type: string
+              description: Locale
+              example: "en-US"
+            phone_number:
+              type: string
+              description: Phone number
+            phone_number_verified:
+              type: boolean
+              description: Is phone verified
+            updated_at:
+              type: integer
+              description: Last profile update (Unix timestamp)
+
+    # API Key Claims (for service-to-service)
+    APIKeyClaims:
+      type: object
+      description: Claims for API key tokens (service accounts)
+      required:
+        - type
+        - sub
+        - iss
+        - iat
+      properties:
+        type:
+          type: string
+          enum: [api_key]
+          description: Token type identifier
+        sub:
+          type: string
+          description: Service account ID
+        iss:
+          type: string
+          description: Issuer
+        iat:
+          type: integer
+          description: Issued at (Unix timestamp)
+        name:
+          type: string
+          description: API key name/label
+        scopes:
+          type: array
+          items:
+            type: string
+          description: Allowed scopes
+        rate_limit:
+          type: integer
+          description: Requests per minute limit
+        allowed_ips:
+          type: array
+          items:
+            type: string
+          description: Allowed IP addresses (CIDR notation)
+
+    # Token Validation Response
+    TokenValidation:
+      type: object
+      description: Result of token validation
+      required:
+        - valid
+      properties:
+        valid:
+          type: boolean
+          description: Whether the token is valid
+        claims:
+          oneOf:
+            - $ref: '#/components/schemas/AccessTokenClaims'
+            - $ref: '#/components/schemas/RefreshTokenClaims'
+            - $ref: '#/components/schemas/IDTokenClaims'
+          description: Decoded claims (if valid)
+        error:
+          type: string
+          enum:
+            - expired
+            - invalid_signature
+            - malformed
+            - revoked
+            - invalid_issuer
+            - invalid_audience
+          description: Error reason (if invalid)
+        error_description:
+          type: string
+          description: Human-readable error description
+
+    # Scopes Definition
+    OAuthScopes:
+      type: object
+      description: Available OAuth2 scopes
+      properties:
+        openid:
+          type: string
+          description: OIDC authentication
+          example: "Required for OIDC flows"
+        profile:
+          type: string
+          description: Access to user profile info
+        email:
+          type: string
+          description: Access to user email
+        offline_access:
+          type: string
+          description: Request refresh token
+        users:read:
+          type: string
+          description: Read user data
+        users:write:
+          type: string
+          description: Create/update users
+        users:delete:
+          type: string
+          description: Delete users
+        admin:
+          type: string
+          description: Administrative access

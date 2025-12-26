@@ -1,0 +1,280 @@
+# User Context Model
+# Represents the authenticated user's context in requests
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://platform.example.com/schemas/auth/user-context.yaml"
+title: User Context
+description: |
+  Authenticated user context extracted from JWT tokens.
+  Available in all authenticated requests.
+
+definitions:
+  # Main User Context
+  UserContext:
+    type: object
+    description: |
+      User context object available in authenticated requests.
+      Typically extracted from JWT access token and enriched with additional data.
+    required:
+      - user_id
+      - email
+      - roles
+      - permissions
+      - is_authenticated
+    properties:
+      # Identity
+      user_id:
+        type: string
+        format: uuid
+        description: Unique user identifier
+        example: "550e8400-e29b-41d4-a716-446655440000"
+
+      email:
+        type: string
+        format: email
+        description: User's email address
+        example: "user@example.com"
+
+      email_verified:
+        type: boolean
+        default: false
+        description: Whether user's email is verified
+
+      # Profile
+      name:
+        type: string
+        description: User's display name
+        example: "John Doe"
+
+      given_name:
+        type: string
+        description: First name
+        example: "John"
+
+      family_name:
+        type: string
+        description: Last name
+        example: "Doe"
+
+      picture:
+        type: string
+        format: uri
+        description: Profile picture URL
+        example: "https://cdn.example.com/avatars/user123.jpg"
+
+      # Authorization
+      roles:
+        type: array
+        items:
+          type: string
+        description: User's assigned roles
+        example: ["admin", "user"]
+
+      permissions:
+        type: array
+        items:
+          type: string
+        description: |
+          Computed permissions from roles.
+          Flattened list including inherited permissions.
+        example: ["users:read", "users:write", "reports:read"]
+
+      # Multi-tenancy
+      tenant_id:
+        type: string
+        format: uuid
+        description: Current tenant/organization ID
+        example: "123e4567-e89b-12d3-a456-426614174000"
+
+      tenant_name:
+        type: string
+        description: Tenant name
+        example: "Acme Corp"
+
+      # Team/Department
+      team_id:
+        type: string
+        format: uuid
+        description: User's team/department ID
+
+      team_name:
+        type: string
+        description: Team name
+
+      # Session
+      session_id:
+        type: string
+        format: uuid
+        description: Current session identifier
+
+      # Authentication state
+      is_authenticated:
+        type: boolean
+        description: Whether user is authenticated
+        default: true
+
+      auth_time:
+        type: string
+        format: date-time
+        description: When the user authenticated
+
+      # Token metadata
+      token_issued_at:
+        type: string
+        format: date-time
+        description: When the access token was issued
+
+      token_expires_at:
+        type: string
+        format: date-time
+        description: When the access token expires
+
+      scopes:
+        type: array
+        items:
+          type: string
+        description: OAuth scopes granted to the token
+        example: ["openid", "profile", "email"]
+
+      # Feature flags
+      features:
+        type: object
+        additionalProperties:
+          type: boolean
+        description: Feature flags enabled for this user
+        example:
+          beta_features: true
+          new_dashboard: false
+
+      # Preferences
+      locale:
+        type: string
+        description: User's preferred locale
+        example: "en-US"
+
+      timezone:
+        type: string
+        description: User's timezone
+        example: "America/New_York"
+
+  # Anonymous/Guest Context
+  AnonymousContext:
+    type: object
+    description: Context for unauthenticated requests
+    required:
+      - is_authenticated
+    properties:
+      is_authenticated:
+        type: boolean
+        enum: [false]
+        description: Always false for anonymous context
+
+      session_id:
+        type: string
+        format: uuid
+        description: Anonymous session ID (for tracking)
+
+      locale:
+        type: string
+        description: Detected locale
+        example: "en-US"
+
+      timezone:
+        type: string
+        description: Detected timezone
+
+  # Service Account Context
+  ServiceAccountContext:
+    type: object
+    description: Context for service-to-service calls
+    required:
+      - service_id
+      - service_name
+      - is_service_account
+      - permissions
+    properties:
+      service_id:
+        type: string
+        description: Service account identifier
+
+      service_name:
+        type: string
+        description: Service name
+        example: "notification-service"
+
+      is_service_account:
+        type: boolean
+        enum: [true]
+        description: Identifies as service account
+
+      permissions:
+        type: array
+        items:
+          type: string
+        description: Permissions granted to the service
+
+      rate_limit:
+        type: integer
+        description: Rate limit (requests per minute)
+
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant context (if scoped)
+
+# Context Resolution
+resolution:
+  # Priority order for context resolution
+  priority:
+    - bearer_token      # JWT from Authorization header
+    - api_key           # API key from X-API-Key header
+    - session_cookie    # Session from cookie
+    - anonymous         # Fall back to anonymous
+
+  # Headers used for context
+  headers:
+    authorization: "Authorization"
+    api_key: "X-API-Key"
+    tenant: "X-Tenant-ID"
+    request_id: "X-Request-ID"
+
+  # Context propagation in service-to-service calls
+  propagation:
+    - user_id
+    - tenant_id
+    - roles
+    - permissions
+    - request_id
+    - trace_id
+
+# Helper Methods (pseudo-code)
+methods:
+  # Check if user has permission
+  has_permission: |
+    function hasPermission(context: UserContext, permission: string): boolean {
+      return context.permissions.some(p => matchPermission(permission, p));
+    }
+
+  # Check if user has any of the roles
+  has_any_role: |
+    function hasAnyRole(context: UserContext, roles: string[]): boolean {
+      return roles.some(role => context.roles.includes(role));
+    }
+
+  # Check if user has all of the roles
+  has_all_roles: |
+    function hasAllRoles(context: UserContext, roles: string[]): boolean {
+      return roles.every(role => context.roles.includes(role));
+    }
+
+  # Check if user is admin or higher
+  is_admin: |
+    function isAdmin(context: UserContext): boolean {
+      return context.roles.includes('admin') || context.roles.includes('super_admin');
+    }
+
+  # Check if context is for the same tenant
+  same_tenant: |
+    function sameTenant(context: UserContext, resourceTenantId: string): boolean {
+      return context.tenant_id === resourceTenantId;
+    }

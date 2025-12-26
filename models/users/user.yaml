@@ -1,0 +1,295 @@
+# User Model
+# Core user data model used across the platform
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://platform.example.com/schemas/users/user.yaml"
+title: User Model
+description: Core user data structure
+
+definitions:
+  # User Status Enum
+  UserStatus:
+    type: string
+    enum:
+      - active
+      - inactive
+      - pending
+      - suspended
+      - deleted
+    description: |
+      User account status:
+      - active: User can log in and use the platform
+      - inactive: User account is deactivated (by admin or self)
+      - pending: Awaiting email verification or invitation acceptance
+      - suspended: Temporarily blocked (security or policy violation)
+      - deleted: Soft-deleted, in retention period
+
+  # User ID
+  UserId:
+    type: string
+    format: uuid
+    description: Unique user identifier
+    example: "550e8400-e29b-41d4-a716-446655440000"
+
+  # Core User Model
+  User:
+    type: object
+    required:
+      - id
+      - email
+      - status
+      - created_at
+      - updated_at
+    properties:
+      # Identity
+      id:
+        $ref: '#/definitions/UserId'
+
+      email:
+        type: string
+        format: email
+        maxLength: 255
+        description: Primary email address (unique per tenant)
+        example: "john.doe@example.com"
+
+      email_verified:
+        type: boolean
+        default: false
+        description: Whether email has been verified
+
+      email_verified_at:
+        type: string
+        format: date-time
+        description: When email was verified
+
+      # Profile
+      name:
+        type: string
+        maxLength: 100
+        description: Display name (computed from given_name + family_name if not set)
+        example: "John Doe"
+
+      given_name:
+        type: string
+        maxLength: 50
+        description: First name
+        example: "John"
+
+      family_name:
+        type: string
+        maxLength: 50
+        description: Last name
+        example: "Doe"
+
+      middle_name:
+        type: string
+        maxLength: 50
+        description: Middle name
+
+      nickname:
+        type: string
+        maxLength: 50
+        description: Preferred informal name
+
+      picture:
+        type: string
+        format: uri
+        maxLength: 500
+        description: Profile picture URL
+        example: "https://cdn.example.com/avatars/user123.jpg"
+
+      # Contact
+      phone:
+        type: string
+        pattern: '^\+?[1-9]\d{1,14}$'
+        description: Phone number in E.164 format
+        example: "+14155551234"
+
+      phone_verified:
+        type: boolean
+        default: false
+        description: Whether phone has been verified
+
+      # Account Status
+      status:
+        $ref: '#/definitions/UserStatus'
+
+      status_reason:
+        type: string
+        maxLength: 255
+        description: Reason for current status (e.g., suspension reason)
+
+      # Authorization
+      roles:
+        type: array
+        items:
+          type: string
+        description: Assigned role identifiers
+        example: ["admin", "user"]
+
+      permissions:
+        type: array
+        items:
+          type: string
+        description: |
+          Computed permissions (derived from roles).
+          This is typically computed at runtime, not stored.
+        example: ["users:read", "users:write"]
+
+      # Organization
+      tenant_id:
+        type: string
+        format: uuid
+        description: Tenant/organization ID
+        example: "123e4567-e89b-12d3-a456-426614174000"
+
+      team_id:
+        type: string
+        format: uuid
+        description: Team/department ID
+
+      manager_id:
+        $ref: '#/definitions/UserId'
+        description: Direct manager's user ID
+
+      # External Identity
+      external_id:
+        type: string
+        maxLength: 255
+        description: ID from external identity provider (SSO)
+
+      identity_provider:
+        type: string
+        enum:
+          - local
+          - google
+          - microsoft
+          - okta
+          - saml
+        description: Authentication provider
+
+      # Metadata
+      metadata:
+        type: object
+        additionalProperties: true
+        description: Custom key-value metadata
+        example:
+          employee_id: "EMP001"
+          department: "Engineering"
+
+      # Timestamps
+      last_login_at:
+        type: string
+        format: date-time
+        description: Last successful login
+
+      last_active_at:
+        type: string
+        format: date-time
+        description: Last activity timestamp
+
+      password_changed_at:
+        type: string
+        format: date-time
+        description: When password was last changed
+
+      created_at:
+        type: string
+        format: date-time
+        description: Account creation timestamp
+
+      updated_at:
+        type: string
+        format: date-time
+        description: Last update timestamp
+
+      deleted_at:
+        type: string
+        format: date-time
+        description: Soft deletion timestamp
+
+  # Minimal User Reference (for embedding in other objects)
+  UserReference:
+    type: object
+    description: Minimal user reference for embedding
+    required:
+      - id
+      - email
+    properties:
+      id:
+        $ref: '#/definitions/UserId'
+      email:
+        type: string
+        format: email
+      name:
+        type: string
+      picture:
+        type: string
+        format: uri
+
+  # User Summary (for lists)
+  UserSummary:
+    type: object
+    description: User summary for list views
+    required:
+      - id
+      - email
+      - status
+    properties:
+      id:
+        $ref: '#/definitions/UserId'
+      email:
+        type: string
+        format: email
+      name:
+        type: string
+      picture:
+        type: string
+        format: uri
+      status:
+        $ref: '#/definitions/UserStatus'
+      roles:
+        type: array
+        items:
+          type: string
+      last_login_at:
+        type: string
+        format: date-time
+      created_at:
+        type: string
+        format: date-time
+
+# Database Indexes (for implementation reference)
+indexes:
+  - name: users_email_tenant_unique
+    columns: [email, tenant_id]
+    unique: true
+    description: Unique email per tenant
+
+  - name: users_external_id
+    columns: [external_id, identity_provider]
+    description: Fast lookup by external ID
+
+  - name: users_status
+    columns: [status, tenant_id]
+    description: Filter by status
+
+  - name: users_team
+    columns: [team_id]
+    description: Filter by team
+
+  - name: users_created_at
+    columns: [created_at]
+    description: Sort by creation date
+
+# Audit Fields (automatically managed)
+audit:
+  created_by:
+    type: string
+    format: uuid
+    description: User who created this record
+
+  updated_by:
+    type: string
+    format: uuid
+    description: User who last updated this record

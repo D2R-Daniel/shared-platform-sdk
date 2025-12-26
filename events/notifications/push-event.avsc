@@ -1,0 +1,422 @@
+{
+  "type": "record",
+  "name": "PushNotificationEvent",
+  "namespace": "com.platform.events.notifications",
+  "doc": "Event triggered when a push notification should be sent",
+  "fields": [
+    {
+      "name": "event_id",
+      "type": "string",
+      "doc": "Unique event identifier (UUID)"
+    },
+    {
+      "name": "event_type",
+      "type": {
+        "type": "enum",
+        "name": "PushEventType",
+        "symbols": [
+          "ALERT",
+          "INFO",
+          "ACTION_REQUIRED",
+          "SILENT"
+        ]
+      },
+      "doc": "Type of push event"
+    },
+    {
+      "name": "timestamp",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Event timestamp in milliseconds since epoch"
+    },
+    {
+      "name": "tenant_id",
+      "type": "string",
+      "doc": "Tenant/organization identifier"
+    },
+    {
+      "name": "target",
+      "type": {
+        "type": "record",
+        "name": "PushTarget",
+        "fields": [
+          {
+            "name": "user_id",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Target user ID"
+          },
+          {
+            "name": "device_tokens",
+            "type": {
+              "type": "array",
+              "items": {
+                "type": "record",
+                "name": "DeviceToken",
+                "fields": [
+                  {
+                    "name": "token",
+                    "type": "string",
+                    "doc": "Device push token"
+                  },
+                  {
+                    "name": "platform",
+                    "type": {
+                      "type": "enum",
+                      "name": "PushPlatform",
+                      "symbols": ["IOS", "ANDROID", "WEB", "HUAWEI"]
+                    },
+                    "doc": "Target platform"
+                  },
+                  {
+                    "name": "app_id",
+                    "type": ["null", "string"],
+                    "default": null,
+                    "doc": "Application identifier"
+                  }
+                ]
+              }
+            },
+            "default": [],
+            "doc": "Specific device tokens (if targeting specific devices)"
+          },
+          {
+            "name": "topic",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Topic for topic-based messaging"
+          },
+          {
+            "name": "condition",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Condition for conditional messaging (FCM)"
+          }
+        ]
+      },
+      "doc": "Push notification target"
+    },
+    {
+      "name": "notification",
+      "type": {
+        "type": "record",
+        "name": "PushNotification",
+        "fields": [
+          {
+            "name": "title",
+            "type": "string",
+            "doc": "Notification title"
+          },
+          {
+            "name": "body",
+            "type": "string",
+            "doc": "Notification body text"
+          },
+          {
+            "name": "image_url",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Image URL for rich notifications"
+          },
+          {
+            "name": "icon",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Notification icon (Android)"
+          },
+          {
+            "name": "badge",
+            "type": ["null", "int"],
+            "default": null,
+            "doc": "Badge count (iOS)"
+          },
+          {
+            "name": "sound",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Notification sound"
+          },
+          {
+            "name": "click_action",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Action when notification is clicked"
+          },
+          {
+            "name": "tag",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Notification tag for grouping/replacing"
+          }
+        ]
+      },
+      "doc": "Notification display content"
+    },
+    {
+      "name": "data",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {},
+      "doc": "Custom data payload"
+    },
+    {
+      "name": "actions",
+      "type": {
+        "type": "array",
+        "items": {
+          "type": "record",
+          "name": "NotificationAction",
+          "fields": [
+            {
+              "name": "action_id",
+              "type": "string",
+              "doc": "Action identifier"
+            },
+            {
+              "name": "title",
+              "type": "string",
+              "doc": "Action button title"
+            },
+            {
+              "name": "icon",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Action icon"
+            },
+            {
+              "name": "launch_app",
+              "type": "boolean",
+              "default": true,
+              "doc": "Whether action launches app"
+            },
+            {
+              "name": "destructive",
+              "type": "boolean",
+              "default": false,
+              "doc": "Whether action is destructive (iOS)"
+            }
+          ]
+        },
+        "default": []
+      },
+      "doc": "Action buttons"
+    },
+    {
+      "name": "priority",
+      "type": {
+        "type": "enum",
+        "name": "PushPriority",
+        "symbols": ["NORMAL", "HIGH"]
+      },
+      "default": "HIGH",
+      "doc": "Push notification priority"
+    },
+    {
+      "name": "category",
+      "type": "string",
+      "doc": "Notification category for preference matching"
+    },
+    {
+      "name": "ttl",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Time to live in seconds"
+    },
+    {
+      "name": "collapse_key",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Collapse key for grouping notifications"
+    },
+    {
+      "name": "android_config",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "AndroidConfig",
+          "fields": [
+            {
+              "name": "channel_id",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Android notification channel ID"
+            },
+            {
+              "name": "priority",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Android notification priority"
+            },
+            {
+              "name": "visibility",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Lock screen visibility"
+            },
+            {
+              "name": "color",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Notification color"
+            }
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "Android-specific configuration"
+    },
+    {
+      "name": "ios_config",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "IOSConfig",
+          "fields": [
+            {
+              "name": "category_id",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "iOS notification category"
+            },
+            {
+              "name": "thread_id",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Thread ID for grouping"
+            },
+            {
+              "name": "interruption_level",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "iOS 15+ interruption level"
+            },
+            {
+              "name": "relevance_score",
+              "type": ["null", "double"],
+              "default": null,
+              "doc": "Relevance score for notification summary"
+            }
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "iOS-specific configuration"
+    },
+    {
+      "name": "web_config",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "WebPushConfig",
+          "fields": [
+            {
+              "name": "require_interaction",
+              "type": "boolean",
+              "default": false,
+              "doc": "Require user interaction to dismiss"
+            },
+            {
+              "name": "renotify",
+              "type": "boolean",
+              "default": false,
+              "doc": "Renotify on tag update"
+            },
+            {
+              "name": "vibrate",
+              "type": {
+                "type": "array",
+                "items": "int"
+              },
+              "default": [],
+              "doc": "Vibration pattern"
+            }
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "Web push specific configuration"
+    },
+    {
+      "name": "scheduling",
+      "type": [
+        "null",
+        {
+          "type": "record",
+          "name": "PushScheduling",
+          "fields": [
+            {
+              "name": "send_at",
+              "type": {
+                "type": "long",
+                "logicalType": "timestamp-millis"
+              },
+              "doc": "Scheduled send time"
+            },
+            {
+              "name": "timezone",
+              "type": ["null", "string"],
+              "default": null,
+              "doc": "Timezone for send time"
+            }
+          ]
+        }
+      ],
+      "default": null,
+      "doc": "Optional scheduling"
+    },
+    {
+      "name": "metadata",
+      "type": {
+        "type": "map",
+        "values": "string"
+      },
+      "default": {},
+      "doc": "Custom metadata"
+    },
+    {
+      "name": "correlation_id",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Correlation ID for request tracing"
+    },
+    {
+      "name": "source",
+      "type": {
+        "type": "record",
+        "name": "PushEventSource",
+        "fields": [
+          {
+            "name": "service",
+            "type": "string",
+            "doc": "Service that produced the event"
+          },
+          {
+            "name": "action",
+            "type": "string",
+            "doc": "Action that triggered the notification"
+          },
+          {
+            "name": "resource_type",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "Type of resource involved"
+          },
+          {
+            "name": "resource_id",
+            "type": ["null", "string"],
+            "default": null,
+            "doc": "ID of resource involved"
+          }
+        ]
+      },
+      "doc": "Event source information"
+    }
+  ]
+}

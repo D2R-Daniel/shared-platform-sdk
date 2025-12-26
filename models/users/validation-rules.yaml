@@ -1,0 +1,369 @@
+# Validation Rules
+# Common validation patterns for user data
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://platform.example.com/schemas/users/validation-rules.yaml"
+title: Validation Rules
+description: Reusable validation patterns and constraints
+
+definitions:
+  # Email Validation
+  Email:
+    type: string
+    format: email
+    maxLength: 255
+    pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    description: |
+      Valid email address.
+      - Must follow RFC 5322 format
+      - Maximum 255 characters
+      - Case-insensitive (stored lowercase)
+    examples:
+      valid:
+        - "user@example.com"
+        - "john.doe@company.org"
+        - "user+tag@example.com"
+      invalid:
+        - "invalid"
+        - "@example.com"
+        - "user@"
+        - "user@.com"
+
+  # Password Validation
+  Password:
+    type: string
+    format: password
+    minLength: 8
+    maxLength: 128
+    description: |
+      Strong password requirements:
+      - Minimum 8 characters
+      - Maximum 128 characters
+      - At least one uppercase letter
+      - At least one lowercase letter
+      - At least one digit
+      - At least one special character
+    # Note: Pattern validation should be done in code, not regex
+    # for better error messages
+
+  # Password Strength Rules
+  PasswordStrength:
+    type: object
+    description: Password strength configuration
+    properties:
+      min_length:
+        type: integer
+        minimum: 8
+        maximum: 128
+        default: 8
+        description: Minimum password length
+
+      max_length:
+        type: integer
+        minimum: 64
+        maximum: 256
+        default: 128
+        description: Maximum password length
+
+      require_uppercase:
+        type: boolean
+        default: true
+        description: Require at least one uppercase letter
+
+      require_lowercase:
+        type: boolean
+        default: true
+        description: Require at least one lowercase letter
+
+      require_digit:
+        type: boolean
+        default: true
+        description: Require at least one digit
+
+      require_special:
+        type: boolean
+        default: true
+        description: Require at least one special character
+
+      special_characters:
+        type: string
+        default: "!@#$%^&*()_+-=[]{}|;':\",./<>?"
+        description: Allowed special characters
+
+      disallow_common:
+        type: boolean
+        default: true
+        description: Disallow common passwords
+
+      disallow_user_info:
+        type: boolean
+        default: true
+        description: Disallow passwords containing user info
+
+      max_repeated_chars:
+        type: integer
+        minimum: 2
+        default: 3
+        description: Max consecutive repeated characters
+
+      min_entropy:
+        type: number
+        minimum: 0
+        default: 50
+        description: Minimum entropy bits (for advanced validation)
+
+  # Phone Number Validation
+  PhoneNumber:
+    type: string
+    pattern: '^\+[1-9]\d{1,14}$'
+    description: |
+      Phone number in E.164 format:
+      - Must start with + and country code
+      - 1-15 digits after the +
+      - No spaces, dashes, or parentheses
+    examples:
+      valid:
+        - "+14155551234"
+        - "+442071234567"
+        - "+61412345678"
+      invalid:
+        - "4155551234"
+        - "+1 (415) 555-1234"
+        - "+1-415-555-1234"
+
+  # Name Validation
+  PersonName:
+    type: string
+    minLength: 1
+    maxLength: 100
+    pattern: "^[\\p{L}\\p{M}' .-]+$"
+    description: |
+      Person name (first, last, or full):
+      - Unicode letters and marks allowed
+      - Spaces, apostrophes, hyphens, periods allowed
+      - 1-100 characters
+    examples:
+      valid:
+        - "John"
+        - "O'Connor"
+        - "Mary-Jane"
+        - "José García"
+        - "李明"
+      invalid:
+        - ""
+        - "John123"
+        - "John<script>"
+
+  # Username Validation
+  Username:
+    type: string
+    minLength: 3
+    maxLength: 30
+    pattern: '^[a-zA-Z][a-zA-Z0-9._-]*$'
+    description: |
+      Username rules:
+      - 3-30 characters
+      - Must start with a letter
+      - Alphanumeric, dots, underscores, hyphens allowed
+      - Case-insensitive (stored lowercase)
+    examples:
+      valid:
+        - "johndoe"
+        - "john.doe"
+        - "john_doe"
+        - "john-doe-123"
+      invalid:
+        - "jo"
+        - "123john"
+        - ".johndoe"
+        - "john doe"
+
+  # URL Validation
+  URL:
+    type: string
+    format: uri
+    maxLength: 2048
+    pattern: '^https?://[^\s/$.?#].[^\s]*$'
+    description: |
+      Valid HTTP/HTTPS URL:
+      - Must use http:// or https://
+      - Maximum 2048 characters
+    examples:
+      valid:
+        - "https://example.com"
+        - "https://example.com/path?query=value"
+        - "http://localhost:3000"
+      invalid:
+        - "ftp://example.com"
+        - "example.com"
+        - "//example.com"
+
+  # UUID Validation
+  UUID:
+    type: string
+    format: uuid
+    pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'
+    description: UUID v1-v5 format (lowercase)
+
+  # Date Validation
+  Date:
+    type: string
+    format: date
+    pattern: '^\d{4}-\d{2}-\d{2}$'
+    description: ISO 8601 date (YYYY-MM-DD)
+
+  # DateTime Validation
+  DateTime:
+    type: string
+    format: date-time
+    description: ISO 8601 datetime with timezone
+
+  # Timezone Validation
+  Timezone:
+    type: string
+    description: |
+      IANA timezone identifier.
+      See: https://www.iana.org/time-zones
+    examples:
+      valid:
+        - "UTC"
+        - "America/New_York"
+        - "Europe/London"
+        - "Asia/Tokyo"
+      invalid:
+        - "EST"
+        - "Eastern Time"
+        - "GMT+5"
+
+  # Locale Validation
+  Locale:
+    type: string
+    pattern: '^[a-z]{2}(-[A-Z]{2})?$'
+    description: |
+      BCP 47 language tag:
+      - Two-letter language code (ISO 639-1)
+      - Optional two-letter region code (ISO 3166-1 alpha-2)
+    examples:
+      valid:
+        - "en"
+        - "en-US"
+        - "fr-CA"
+        - "zh-CN"
+      invalid:
+        - "english"
+        - "en_US"
+        - "EN-us"
+
+  # Country Code Validation
+  CountryCode:
+    type: string
+    pattern: '^[A-Z]{2}$'
+    description: ISO 3166-1 alpha-2 country code
+    examples:
+      valid:
+        - "US"
+        - "GB"
+        - "DE"
+        - "JP"
+
+  # Currency Code Validation
+  CurrencyCode:
+    type: string
+    pattern: '^[A-Z]{3}$'
+    description: ISO 4217 currency code
+    examples:
+      valid:
+        - "USD"
+        - "EUR"
+        - "GBP"
+        - "JPY"
+
+  # Hex Color Validation
+  HexColor:
+    type: string
+    pattern: '^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$'
+    description: Hex color code
+    examples:
+      valid:
+        - "#FFF"
+        - "#ffffff"
+        - "#3B82F6"
+      invalid:
+        - "FFF"
+        - "#GGGGGG"
+        - "rgb(255,255,255)"
+
+  # IP Address Validation
+  IPAddress:
+    oneOf:
+      - $ref: '#/definitions/IPv4'
+      - $ref: '#/definitions/IPv6'
+    description: Valid IPv4 or IPv6 address
+
+  IPv4:
+    type: string
+    format: ipv4
+    pattern: '^((25[0-5]|(2[0-4]|1\d|[1-9]|)\d)\.?\b){4}$'
+    description: IPv4 address
+
+  IPv6:
+    type: string
+    format: ipv6
+    description: IPv6 address
+
+# Validation Error Messages
+error_messages:
+  email:
+    required: "Email address is required"
+    format: "Please enter a valid email address"
+    unique: "This email is already registered"
+
+  password:
+    required: "Password is required"
+    min_length: "Password must be at least 8 characters"
+    max_length: "Password cannot exceed 128 characters"
+    uppercase: "Password must contain at least one uppercase letter"
+    lowercase: "Password must contain at least one lowercase letter"
+    digit: "Password must contain at least one number"
+    special: "Password must contain at least one special character"
+    common: "This password is too common. Please choose a stronger password"
+    user_info: "Password cannot contain your name or email"
+
+  phone:
+    format: "Please enter a valid phone number in international format (+1234567890)"
+
+  name:
+    required: "Name is required"
+    format: "Name contains invalid characters"
+    min_length: "Name is too short"
+    max_length: "Name is too long"
+
+  username:
+    required: "Username is required"
+    format: "Username must start with a letter and contain only letters, numbers, dots, underscores, or hyphens"
+    min_length: "Username must be at least 3 characters"
+    max_length: "Username cannot exceed 30 characters"
+    unique: "This username is already taken"
+
+  url:
+    format: "Please enter a valid URL"
+
+# Common Sanitization Rules
+sanitization:
+  email:
+    - lowercase
+    - trim
+    - remove_plus_addressing  # Optional: remove +tag from emails
+
+  name:
+    - trim
+    - normalize_whitespace    # Replace multiple spaces with single space
+    - title_case              # Optional: capitalize first letters
+
+  username:
+    - lowercase
+    - trim
+
+  phone:
+    - remove_formatting       # Remove spaces, dashes, parentheses
+    - ensure_country_code     # Add default country code if missing
