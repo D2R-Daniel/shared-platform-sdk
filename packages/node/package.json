@@ -1,0 +1,80 @@
+{
+  "name": "@platform/shared-sdk",
+  "version": "0.1.0",
+  "description": "Shared platform SDK for authentication, user management, and notifications",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./auth": {
+      "types": "./dist/auth/index.d.ts",
+      "import": "./dist/auth/index.mjs",
+      "require": "./dist/auth/index.js"
+    },
+    "./users": {
+      "types": "./dist/users/index.d.ts",
+      "import": "./dist/users/index.mjs",
+      "require": "./dist/users/index.js"
+    },
+    "./notifications": {
+      "types": "./dist/notifications/index.d.ts",
+      "import": "./dist/notifications/index.mjs",
+      "require": "./dist/notifications/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "sdk",
+    "api",
+    "authentication",
+    "users",
+    "notifications",
+    "typescript"
+  ],
+  "author": "Platform Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/D2R-Daniel/shared-platform-specs.git",
+    "directory": "packages/node"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.6.0",
+    "jwt-decode": "^4.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "eslint": "^8.55.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
+  }
+}

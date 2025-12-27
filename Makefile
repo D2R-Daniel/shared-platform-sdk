@@ -1,31 +1,44 @@
 # Makefile for shared-platform-specs
-# SDK generation, validation, and development utilities
+# SDK build, validation, and development utilities
 
-.PHONY: help install validate generate-python generate-java generate-node generate-all clean lint docs
+.PHONY: help install validate lint docs clean
+.PHONY: build-python build-node build-java build-all
+.PHONY: test-python test-node test-java test-all
+.PHONY: publish-python publish-node publish-java publish-all
 
 # Default target
 help:
-	@echo "shared-platform-specs - API Contract & SDK Generator"
+	@echo "shared-platform-specs - Platform SDK Monorepo"
 	@echo ""
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "Targets:"
+	@echo "Spec Targets:"
 	@echo "  install          Install development dependencies"
 	@echo "  validate         Validate all OpenAPI specs"
 	@echo "  lint             Lint OpenAPI specs and schemas"
-	@echo ""
-	@echo "  generate-python  Generate Python SDK"
-	@echo "  generate-java    Generate Java SDK"
-	@echo "  generate-node    Generate Node.js/TypeScript SDK"
-	@echo "  generate-all     Generate all SDKs"
-	@echo ""
-	@echo "  clean            Remove generated files"
 	@echo "  docs             Generate API documentation"
+	@echo ""
+	@echo "Build Targets:"
+	@echo "  build-python     Build Python package"
+	@echo "  build-node       Build Node.js package"
+	@echo "  build-java       Build Java package"
+	@echo "  build-all        Build all packages"
+	@echo ""
+	@echo "Test Targets:"
+	@echo "  test-python      Run Python tests"
+	@echo "  test-node        Run Node.js tests"
+	@echo "  test-java        Run Java tests"
+	@echo "  test-all         Run all tests"
+	@echo ""
+	@echo "Publish Targets:"
+	@echo "  publish-python   Publish to PyPI"
+	@echo "  publish-node     Publish to npm"
+	@echo "  publish-java     Publish to Maven Central"
+	@echo "  publish-all      Publish all packages"
 	@echo ""
 
 # Variables
-SCRIPTS_DIR := ./scripts
-GENERATED_DIR := ./generated
+PACKAGES_DIR := ./packages
 OPENAPI_DIR := ./openapi
 EVENTS_DIR := ./events
 MODELS_DIR := ./models
@@ -56,32 +69,82 @@ validate:
 lint: validate
 	@echo "Linting complete."
 
-# Generate Python SDK
-generate-python:
-	@echo "Generating Python SDK..."
-	@chmod +x $(SCRIPTS_DIR)/generate-sdk.sh
-	@$(SCRIPTS_DIR)/generate-sdk.sh python $(GENERATED_DIR)/python
+# ============================================================================
+# Python Package
+# ============================================================================
 
-# Generate Java SDK
-generate-java:
-	@echo "Generating Java SDK..."
-	@chmod +x $(SCRIPTS_DIR)/generate-sdk.sh
-	@$(SCRIPTS_DIR)/generate-sdk.sh java $(GENERATED_DIR)/java
+build-python:
+	@echo "Building Python package..."
+	@cd $(PACKAGES_DIR)/python && pip install build && python -m build
+	@echo "Python package built."
 
-# Generate Node.js SDK
-generate-node:
-	@echo "Generating Node.js SDK..."
-	@chmod +x $(SCRIPTS_DIR)/generate-sdk.sh
-	@$(SCRIPTS_DIR)/generate-sdk.sh node $(GENERATED_DIR)/node
+test-python:
+	@echo "Running Python tests..."
+	@cd $(PACKAGES_DIR)/python && pip install -e ".[dev]" && pytest
+	@echo "Python tests complete."
 
-# Generate all SDKs
-generate-all: generate-python generate-java generate-node
-	@echo "All SDKs generated in $(GENERATED_DIR)"
+publish-python:
+	@echo "Publishing Python package to PyPI..."
+	@cd $(PACKAGES_DIR)/python && pip install twine && twine upload dist/*
+	@echo "Python package published."
 
-# Clean generated files
+# ============================================================================
+# Node.js Package
+# ============================================================================
+
+build-node:
+	@echo "Building Node.js package..."
+	@cd $(PACKAGES_DIR)/node && npm install && npm run build
+	@echo "Node.js package built."
+
+test-node:
+	@echo "Running Node.js tests..."
+	@cd $(PACKAGES_DIR)/node && npm install && npm test
+	@echo "Node.js tests complete."
+
+publish-node:
+	@echo "Publishing Node.js package to npm..."
+	@cd $(PACKAGES_DIR)/node && npm publish
+	@echo "Node.js package published."
+
+# ============================================================================
+# Java Package
+# ============================================================================
+
+build-java:
+	@echo "Building Java package..."
+	@cd $(PACKAGES_DIR)/java && mvn clean package
+	@echo "Java package built."
+
+test-java:
+	@echo "Running Java tests..."
+	@cd $(PACKAGES_DIR)/java && mvn test
+	@echo "Java tests complete."
+
+publish-java:
+	@echo "Publishing Java package to Maven Central..."
+	@cd $(PACKAGES_DIR)/java && mvn deploy
+	@echo "Java package published."
+
+# ============================================================================
+# All Packages
+# ============================================================================
+
+build-all: build-python build-node build-java
+	@echo "All packages built."
+
+test-all: test-python test-node test-java
+	@echo "All tests complete."
+
+publish-all: publish-python publish-node publish-java
+	@echo "All packages published."
+
+# Clean build artifacts
 clean:
-	@echo "Cleaning generated files..."
-	@rm -rf $(GENERATED_DIR)
+	@echo "Cleaning build artifacts..."
+	@rm -rf $(PACKAGES_DIR)/python/dist $(PACKAGES_DIR)/python/build $(PACKAGES_DIR)/python/*.egg-info
+	@rm -rf $(PACKAGES_DIR)/node/dist $(PACKAGES_DIR)/node/node_modules
+	@rm -rf $(PACKAGES_DIR)/java/target
 	@echo "Clean complete."
 
 # Generate API documentation (using Redoc or similar)
@@ -130,5 +193,6 @@ version:
 
 # CI targets
 ci-validate: validate
-ci-generate: generate-all
-ci: ci-validate ci-generate
+ci-build: build-all
+ci-test: test-all
+ci: ci-validate ci-build ci-test

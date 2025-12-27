@@ -1,18 +1,214 @@
-# Shared Platform Specs
+# Shared Platform SDK
 
-Central repository for API contracts, event schemas, and shared data models. This is the **single source of truth** for platform specifications that generate language-specific SDKs.
+A unified SDK monorepo for authentication, user management, and notifications across all platform services.
 
 ## Architecture
 
 ```
-shared-platform-specs/          (This Repo - Contracts)
-         │
-         │ Generates
-         ▼
-┌─────────────────────────────────────────────────────┐
-│  shared-python   shared-java   shared-node          │
-│  (PyPI)          (Maven)       (npm)                │
-└─────────────────────────────────────────────────────┘
+shared-platform-specs/
+├── openapi/          # REST API specifications (OpenAPI 3.0)
+├── events/           # Event schemas (Avro)
+├── models/           # Shared data models
+└── packages/         # Language-specific SDKs
+    ├── python/       # PyPI: shared-platform
+    ├── node/         # npm: @platform/shared-sdk
+    └── java/         # Maven: com.platform:shared-sdk
+```
+
+## Installation
+
+### Python
+```bash
+pip install shared-platform
+```
+
+### Node.js
+```bash
+npm install @platform/shared-sdk
+# or
+yarn add @platform/shared-sdk
+```
+
+### Java (Maven)
+```xml
+<dependency>
+    <groupId>com.platform</groupId>
+    <artifactId>shared-sdk</artifactId>
+    <version>0.1.0</version>
+</dependency>
+```
+
+### Java (Gradle)
+```groovy
+implementation 'com.platform:shared-sdk:0.1.0'
+```
+
+## Quick Start
+
+### Python
+```python
+from shared_platform import AuthClient, UserClient, NotificationClient
+
+# Initialize clients
+auth = AuthClient(issuer_url="https://auth.example.com")
+users = UserClient(base_url="https://api.example.com")
+notifications = NotificationClient(base_url="https://api.example.com")
+
+# Authenticate
+tokens = auth.login("user@example.com", "password")
+
+# Get user context from token
+context = auth.get_user_context(tokens.access_token)
+print(f"Hello, {context.name}!")
+
+# Check permissions
+if context.has_permission("users:read"):
+    user_list = users.list(page=1, page_size=20)
+    print(f"Found {user_list.pagination.total_items} users")
+```
+
+### Node.js/TypeScript
+```typescript
+import { AuthClient, UserClient, NotificationClient } from '@platform/shared-sdk';
+
+// Initialize clients
+const auth = new AuthClient({ issuerUrl: 'https://auth.example.com' });
+const users = new UserClient({ baseUrl: 'https://api.example.com' });
+const notifications = new NotificationClient({ baseUrl: 'https://api.example.com' });
+
+// Authenticate
+const tokens = await auth.login('user@example.com', 'password');
+
+// Get user context from token
+const context = auth.getUserContext(tokens.accessToken);
+console.log(`Hello, ${context.name}!`);
+
+// Check permissions
+if (context.hasPermission('users:read')) {
+  const userList = await users.list({ page: 1, pageSize: 20 });
+  console.log(`Found ${userList.pagination.totalItems} users`);
+}
+```
+
+### Java
+```java
+import com.platform.sdk.auth.AuthClient;
+import com.platform.sdk.auth.UserContext;
+import com.platform.sdk.users.UserClient;
+
+// Initialize clients
+AuthClient auth = new AuthClient.Builder()
+    .issuerUrl("https://auth.example.com")
+    .build();
+
+UserClient users = new UserClient.Builder()
+    .baseUrl("https://api.example.com")
+    .build();
+
+// Authenticate
+TokenResponse tokens = auth.login("user@example.com", "password");
+
+// Get user context from token
+UserContext context = auth.getUserContext(tokens.getAccessToken());
+System.out.println("Hello, " + context.getName());
+
+// Check permissions
+if (context.hasPermission("users:read")) {
+    UserListResponse result = users.list(new ListUsersParams().page(1).pageSize(20));
+    System.out.println("Found " + result.getPagination().getTotalItems() + " users");
+}
+```
+
+## Modules
+
+### Authentication
+- OAuth2/OIDC login, logout, token refresh
+- JWT token validation and introspection
+- User context extraction from tokens
+- Role and permission checking
+
+### User Management
+- User CRUD operations
+- Profile and preferences management
+- Password changes
+- Status updates (active, suspended, etc.)
+
+### Notifications
+- In-app notification management
+- Mark as read/unread
+- Notification preferences
+- Device registration for push notifications
+- Event types for email, SMS, and push
+
+## Roles & Permissions
+
+Built-in role hierarchy with permission inheritance:
+
+| Role | Inherits | Key Permissions |
+|------|----------|-----------------|
+| `super_admin` | admin | `*` (all) |
+| `admin` | manager | `users:*`, `settings:*` |
+| `manager` | user | `reports:*`, `team:*` |
+| `user` | guest | `profile:*`, `notifications:*` |
+| `guest` | - | `*.read` (read-only) |
+
+```python
+# Python
+from shared_platform.auth import get_role_permissions, check_permission
+
+perms = get_role_permissions("admin")  # Returns all permissions including inherited
+
+granted = ["users:*", "reports:read"]
+check_permission(granted, "users:create")  # True (wildcard match)
+check_permission(granted, "settings:read")  # False
+```
+
+## Development
+
+### Building Packages
+
+```bash
+# Build all packages
+make build-all
+
+# Build specific package
+make build-python
+make build-node
+make build-java
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+make test-all
+
+# Run specific tests
+make test-python
+make test-node
+make test-java
+```
+
+### Validating Specs
+
+```bash
+# Validate OpenAPI specs
+make validate
+
+# Generate API docs
+make docs
+```
+
+### Publishing
+
+```bash
+# Publish all packages
+make publish-all
+
+# Publish specific package
+make publish-python   # to PyPI
+make publish-node     # to npm
+make publish-java     # to Maven Central
 ```
 
 ## Repository Structure
@@ -24,135 +220,29 @@ shared-platform-specs/
 │   ├── users/                  # User management endpoints
 │   └── notifications/          # Notification preferences
 ├── events/                     # Event schemas (Avro)
-│   └── notifications/          # Notification events
-├── models/                     # Shared data models (JSON Schema)
-│   ├── auth/                   # Auth-related models
-│   ├── users/                  # User models
-│   └── notifications/          # Notification models
-└── scripts/                    # SDK generation scripts
+│   └── notifications/          # Email, SMS, Push events
+├── models/                     # Shared data models
+│   ├── auth/                   # Roles, permissions, user context
+│   ├── users/                  # User, profile, validation rules
+│   └── notifications/          # Templates, preferences
+├── packages/                   # Language-specific SDKs
+│   ├── python/                 # Python package (PyPI)
+│   ├── node/                   # Node.js package (npm)
+│   └── java/                   # Java package (Maven)
+├── scripts/                    # Build and utility scripts
+├── Makefile                    # Build automation
+└── VERSION                     # Current version
 ```
 
-## Modules
-
-### 1. Authentication (`openapi/auth/`, `models/auth/`)
-- OAuth2/OIDC endpoint specifications
-- JWT token schemas and claims
-- Role and permission definitions
-- User context model for authenticated requests
-
-### 2. User Management (`openapi/users/`, `models/users/`)
-- User CRUD operations
-- Profile management
-- Validation rules (email, password, phone)
-
-### 3. Notifications (`events/notifications/`, `openapi/notifications/`)
-- Event-driven notification system
-- Email, SMS, Push notification events
-- Template definitions
-- Delivery confirmation events
-
-## SDK Generation
-
-### Prerequisites
-
-```bash
-# Install OpenAPI Generator
-brew install openapi-generator
-
-# Or via npm
-npm install @openapitools/openapi-generator-cli -g
-```
-
-### Generate SDKs
-
-```bash
-# Generate all SDKs
-make generate-all
-
-# Generate specific language
-make generate-python
-make generate-java
-make generate-node
-
-# Or use the script directly
-./scripts/generate-sdk.sh python
-./scripts/generate-sdk.sh java
-./scripts/generate-sdk.sh node
-```
-
-### Generated SDK Structure
-
-Each generated SDK includes:
-- `auth/` - Authentication client and utilities
-- `users/` - User management client
-- `notifications/` - Notification client and event models
-- `models/` - All shared data models
-
-## Usage in Projects
-
-### Python
-```python
-from shared_platform import AuthClient, UserClient
-from shared_platform.models import User, UserContext
-
-# Initialize with your IdP
-auth = AuthClient(issuer_url="https://auth.example.com")
-users = UserClient(base_url="https://api.example.com")
-
-# Get authenticated user context
-context: UserContext = auth.get_user_context(token)
-
-# Manage users
-user: User = users.get(user_id)
-```
-
-### Node.js
-```typescript
-import { AuthClient, UserClient } from '@your-org/shared-platform';
-import { User, UserContext } from '@your-org/shared-platform/models';
-
-const auth = new AuthClient({ issuerUrl: 'https://auth.example.com' });
-const users = new UserClient({ baseUrl: 'https://api.example.com' });
-
-const context: UserContext = await auth.getUserContext(token);
-const user: User = await users.get(userId);
-```
-
-## Development
-
-### Adding New Models
-
-1. Define the schema in `models/<module>/<name>.yaml`
-2. Reference it in the relevant OpenAPI spec using `$ref`
-3. Run `make generate-all` to update SDKs
-4. Bump version in `VERSION` file
-
-### Adding New Events
-
-1. Create Avro schema in `events/<module>/<name>.avsc`
-2. Update event documentation
-3. Generate event classes for each language
-
-### Versioning
+## Versioning
 
 This repository follows [Semantic Versioning](https://semver.org/):
-- **MAJOR**: Breaking changes to contracts
-- **MINOR**: New endpoints, fields, or events (backward compatible)
-- **PATCH**: Documentation, fixes (no contract changes)
+- **MAJOR**: Breaking changes to SDK APIs
+- **MINOR**: New features (backward compatible)
+- **PATCH**: Bug fixes and documentation
 
-## Best Practices
+All packages share the same version number defined in `VERSION`.
 
-1. **Contract First**: Define specs before implementation
-2. **Backward Compatibility**: Add fields as optional, deprecate before removing
-3. **Consistent Naming**: Use snake_case for fields, PascalCase for types
-4. **Documentation**: Every field should have a description
-5. **Validation**: Include format, pattern, min/max constraints
+## License
 
-## Related Repositories
-
-| Repository | Description |
-|------------|-------------|
-| `shared-python` | Python SDK (generated) |
-| `shared-java` | Java SDK (generated) |
-| `shared-node` | Node.js SDK (generated) |
-| `shared-cicd` | Reusable CI/CD workflows |
+MIT
