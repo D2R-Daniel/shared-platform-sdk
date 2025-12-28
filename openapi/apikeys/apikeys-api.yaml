@@ -1,0 +1,489 @@
+openapi: 3.0.3
+info:
+  title: API Keys Service API
+  description: API for managing API keys for programmatic access
+  version: 1.0.0
+
+paths:
+  /api-keys:
+    get:
+      summary: List API keys
+      operationId: listAPIKeys
+      tags:
+        - API Keys
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: environment
+          in: query
+          schema:
+            $ref: '#/components/schemas/APIKeyEnvironment'
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+          description: Filter by active status (not expired/revoked)
+      responses:
+        '200':
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyListResponse'
+
+    post:
+      summary: Create API key
+      operationId: createAPIKey
+      tags:
+        - API Keys
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAPIKeyRequest'
+      responses:
+        '201':
+          description: API key created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAPIKeyResponse'
+        '400':
+          description: Invalid request
+
+  /api-keys/{key_id}:
+    get:
+      summary: Get API key
+      operationId: getAPIKey
+      tags:
+        - API Keys
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: API key details (without full key)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeySummary'
+        '404':
+          description: API key not found
+
+    put:
+      summary: Update API key
+      operationId: updateAPIKey
+      tags:
+        - API Keys
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateAPIKeyRequest'
+      responses:
+        '200':
+          description: API key updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeySummary'
+        '404':
+          description: API key not found
+
+    delete:
+      summary: Revoke API key
+      operationId: revokeAPIKey
+      tags:
+        - API Keys
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for revocation
+      responses:
+        '204':
+          description: API key revoked
+        '404':
+          description: API key not found
+
+  /api-keys/{key_id}/usage:
+    get:
+      summary: Get API key usage
+      operationId: getAPIKeyUsage
+      tags:
+        - Usage
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [hour, day, week, month]
+            default: day
+      responses:
+        '200':
+          description: Usage statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyUsage'
+        '404':
+          description: API key not found
+
+  /api-keys/validate:
+    post:
+      summary: Validate API key
+      description: Validate an API key and optionally check permissions
+      operationId: validateAPIKey
+      tags:
+        - Validation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateAPIKeyRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateAPIKeyResponse'
+
+  /api-keys/{key_id}/regenerate:
+    post:
+      summary: Regenerate API key
+      description: Generate a new key value (invalidates old key)
+      operationId: regenerateAPIKey
+      tags:
+        - API Keys
+      parameters:
+        - name: key_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: New key generated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateAPIKeyResponse'
+        '404':
+          description: API key not found
+
+components:
+  schemas:
+    APIKeyEnvironment:
+      type: string
+      enum:
+        - live
+        - test
+
+    APIKey:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        key:
+          type: string
+          description: Full API key (only on creation)
+        key_prefix:
+          type: string
+          description: First 12 characters for display
+        environment:
+          $ref: '#/components/schemas/APIKeyEnvironment'
+        permissions:
+          type: array
+          items:
+            type: string
+        rate_limit:
+          type: integer
+        allowed_ips:
+          type: array
+          items:
+            type: string
+        allowed_origins:
+          type: array
+          items:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+        last_used_ip:
+          type: string
+        usage_count:
+          type: integer
+        revoked_at:
+          type: string
+          format: date-time
+        revoked_by:
+          type: string
+          format: uuid
+        revoke_reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        created_by:
+          type: string
+          format: uuid
+
+    APIKeySummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        key_prefix:
+          type: string
+        environment:
+          $ref: '#/components/schemas/APIKeyEnvironment'
+        permissions:
+          type: array
+          items:
+            type: string
+        rate_limit:
+          type: integer
+        allowed_ips:
+          type: array
+          items:
+            type: string
+        allowed_origins:
+          type: array
+          items:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
+        last_used_at:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    CreateAPIKeyRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        environment:
+          $ref: '#/components/schemas/APIKeyEnvironment'
+          default: live
+        permissions:
+          type: array
+          items:
+            type: string
+        rate_limit:
+          type: integer
+          default: 1000
+        allowed_ips:
+          type: array
+          items:
+            type: string
+        allowed_origins:
+          type: array
+          items:
+            type: string
+        expires_in_days:
+          type: integer
+          description: Days until expiration (null for never)
+
+    CreateAPIKeyResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        key:
+          type: string
+          description: Full API key (only shown once)
+        key_prefix:
+          type: string
+        environment:
+          $ref: '#/components/schemas/APIKeyEnvironment'
+        permissions:
+          type: array
+          items:
+            type: string
+        rate_limit:
+          type: integer
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    UpdateAPIKeyRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        permissions:
+          type: array
+          items:
+            type: string
+        rate_limit:
+          type: integer
+        allowed_ips:
+          type: array
+          items:
+            type: string
+        allowed_origins:
+          type: array
+          items:
+            type: string
+
+    APIKeyUsage:
+      type: object
+      properties:
+        key_id:
+          type: string
+          format: uuid
+        period:
+          type: string
+          enum: [hour, day, week, month]
+        requests_count:
+          type: integer
+        requests_by_endpoint:
+          type: object
+          additionalProperties:
+            type: integer
+        error_count:
+          type: integer
+        rate_limit_hits:
+          type: integer
+        avg_latency_ms:
+          type: number
+
+    ValidateAPIKeyRequest:
+      type: object
+      required:
+        - key
+      properties:
+        key:
+          type: string
+        required_permission:
+          type: string
+
+    ValidateAPIKeyResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        tenant_id:
+          type: string
+          format: uuid
+        permissions:
+          type: array
+          items:
+            type: string
+        has_permission:
+          type: boolean
+        error:
+          type: string
+        error_code:
+          type: string
+          enum:
+            - key_not_found
+            - key_expired
+            - key_revoked
+            - ip_not_allowed
+            - rate_limited
+            - permission_denied
+
+    RateLimitInfo:
+      type: object
+      properties:
+        limit:
+          type: integer
+        remaining:
+          type: integer
+        reset_at:
+          type: string
+          format: date-time
+        retry_after:
+          type: integer
+
+    APIKeyListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/APIKeySummary'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer

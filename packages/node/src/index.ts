@@ -24,6 +24,10 @@ export { TenantClient, DepartmentClient } from './tenants';
 export { RoleClient, matchesPermission, hasAnyPermission, hasAllPermissions } from './permissions';
 export { TeamClient } from './teams';
 export { InvitationClient } from './invitations';
+export { EmailClient } from './email';
+export { SettingsClient } from './settings';
+export { WebhookClient, generateSignature, verifySignature } from './webhooks';
+export { APIKeyClient } from './apikeys';
 
 export type {
   // Auth types
@@ -138,5 +142,57 @@ export type {
   AcceptInvitationResponse,
   InvitationListResponse,
 } from './invitations';
+
+export type {
+  // Email types
+  EmailTemplate,
+  EmailConfig,
+  SendEmailRequest,
+  SendTemplateRequest,
+  EmailSendResult,
+  CreateTemplateRequest,
+  UpdateTemplateRequest,
+  TemplateListResponse,
+  TemplateCategory,
+} from './email';
+
+export type {
+  // Settings types
+  SettingCategory,
+  SettingType,
+  SettingDefinition,
+  TenantSettings,
+  SettingValue,
+  AllSettingsResponse,
+  CategorySettingsResponse,
+} from './settings';
+
+export type {
+  // Webhook types
+  WebhookEvent,
+  DeliveryStatus,
+  Webhook,
+  WebhookDelivery,
+  CreateWebhookRequest,
+  UpdateWebhookRequest,
+  WebhookTestResult,
+  WebhookListResponse,
+  DeliveryListResponse,
+  WebhookPayload,
+} from './webhooks';
+
+export type {
+  // API Key types
+  APIKeyEnvironment,
+  APIKey,
+  APIKeySummary,
+  CreateAPIKeyRequest,
+  CreateAPIKeyResponse,
+  UpdateAPIKeyRequest,
+  ValidateAPIKeyResponse,
+  APIKeyUsage,
+  RateLimitInfo,
+  APIKeyListResponse,
+} from './apikeys';
 
 export const VERSION = '0.1.0';

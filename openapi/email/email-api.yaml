@@ -1,0 +1,500 @@
+openapi: 3.0.3
+info:
+  title: Email Service API
+  description: API for email sending and template management
+  version: 1.0.0
+
+paths:
+  /email/send:
+    post:
+      summary: Send email directly
+      description: Send an email with custom content
+      operationId: sendEmail
+      tags:
+        - Email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendEmailRequest'
+      responses:
+        '200':
+          description: Email sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailSendResult'
+        '400':
+          description: Invalid request
+        '401':
+          description: Unauthorized
+        '503':
+          description: Email service unavailable
+
+  /email/send-template:
+    post:
+      summary: Send templated email
+      description: Send an email using a template with variable substitution
+      operationId: sendTemplateEmail
+      tags:
+        - Email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendTemplateRequest'
+      responses:
+        '200':
+          description: Email sent successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailSendResult'
+        '400':
+          description: Invalid request
+        '404':
+          description: Template not found
+
+  /email/templates:
+    get:
+      summary: List email templates
+      operationId: listTemplates
+      tags:
+        - Templates
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: page_size
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: category
+          in: query
+          schema:
+            type: string
+        - name: is_active
+          in: query
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of templates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemplateListResponse'
+
+    post:
+      summary: Create email template
+      operationId: createTemplate
+      tags:
+        - Templates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTemplateRequest'
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplate'
+        '409':
+          description: Template slug already exists
+
+  /email/templates/{template_id}:
+    get:
+      summary: Get email template
+      operationId: getTemplate
+      tags:
+        - Templates
+      parameters:
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplate'
+        '404':
+          description: Template not found
+
+    put:
+      summary: Update email template
+      operationId: updateTemplate
+      tags:
+        - Templates
+      parameters:
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTemplateRequest'
+      responses:
+        '200':
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplate'
+        '404':
+          description: Template not found
+
+    delete:
+      summary: Delete email template
+      operationId: deleteTemplate
+      tags:
+        - Templates
+      parameters:
+        - name: template_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Template deleted
+        '404':
+          description: Template not found
+
+  /email/templates/slug/{slug}:
+    get:
+      summary: Get template by slug
+      operationId: getTemplateBySlug
+      tags:
+        - Templates
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Template details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTemplate'
+        '404':
+          description: Template not found
+
+  /email/config:
+    get:
+      summary: Get email configuration
+      operationId: getEmailConfig
+      tags:
+        - Configuration
+      responses:
+        '200':
+          description: Email configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailConfig'
+        '404':
+          description: No configuration found
+
+    put:
+      summary: Update email configuration
+      operationId: updateEmailConfig
+      tags:
+        - Configuration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateEmailConfigRequest'
+      responses:
+        '200':
+          description: Configuration updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailConfig'
+
+  /email/config/test:
+    post:
+      summary: Test email configuration
+      operationId: testEmailConfig
+      tags:
+        - Configuration
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                recipient:
+                  type: string
+                  format: email
+                  description: Test recipient email
+      responses:
+        '200':
+          description: Test result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailTestResult'
+
+components:
+  schemas:
+    EmailTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        subject:
+          type: string
+        html_content:
+          type: string
+        text_content:
+          type: string
+        variables:
+          type: array
+          items:
+            type: string
+        category:
+          type: string
+          enum: [invitation, verification, notification, reminder, welcome, password_reset, alert]
+        is_system:
+          type: boolean
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    EmailConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        smtp_host:
+          type: string
+        smtp_port:
+          type: integer
+        smtp_user:
+          type: string
+        use_tls:
+          type: boolean
+        from_name:
+          type: string
+        from_email:
+          type: string
+        reply_to:
+          type: string
+        is_active:
+          type: boolean
+        verified_at:
+          type: string
+          format: date-time
+
+    SendEmailRequest:
+      type: object
+      required:
+        - to
+        - subject
+        - html_content
+      properties:
+        to:
+          type: array
+          items:
+            type: string
+            format: email
+        cc:
+          type: array
+          items:
+            type: string
+            format: email
+        bcc:
+          type: array
+          items:
+            type: string
+            format: email
+        subject:
+          type: string
+        html_content:
+          type: string
+        text_content:
+          type: string
+        from_name:
+          type: string
+        reply_to:
+          type: string
+          format: email
+
+    SendTemplateRequest:
+      type: object
+      required:
+        - template_slug
+        - to
+        - variables
+      properties:
+        template_slug:
+          type: string
+        to:
+          type: array
+          items:
+            type: string
+            format: email
+        cc:
+          type: array
+          items:
+            type: string
+            format: email
+        bcc:
+          type: array
+          items:
+            type: string
+            format: email
+        variables:
+          type: object
+          additionalProperties: true
+        from_name:
+          type: string
+        reply_to:
+          type: string
+          format: email
+
+    EmailSendResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message_id:
+          type: string
+        recipients_count:
+          type: integer
+        error:
+          type: string
+
+    CreateTemplateRequest:
+      type: object
+      required:
+        - name
+        - slug
+        - subject
+        - html_content
+        - category
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        subject:
+          type: string
+        html_content:
+          type: string
+        text_content:
+          type: string
+        variables:
+          type: array
+          items:
+            type: string
+        category:
+          type: string
+
+    UpdateTemplateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        subject:
+          type: string
+        html_content:
+          type: string
+        text_content:
+          type: string
+        variables:
+          type: array
+          items:
+            type: string
+        is_active:
+          type: boolean
+
+    UpdateEmailConfigRequest:
+      type: object
+      properties:
+        smtp_host:
+          type: string
+        smtp_port:
+          type: integer
+        smtp_user:
+          type: string
+        smtp_password:
+          type: string
+        use_tls:
+          type: boolean
+        from_name:
+          type: string
+        from_email:
+          type: string
+        reply_to:
+          type: string
+        is_active:
+          type: boolean
+
+    TemplateListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/EmailTemplate'
+        total:
+          type: integer
+        page:
+          type: integer
+        page_size:
+          type: integer
+
+    EmailTestResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        error:
+          type: string

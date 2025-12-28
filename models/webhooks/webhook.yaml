@@ -1,0 +1,295 @@
+# Webhook Models
+# Defines webhooks for external integrations with signature verification
+
+WebhookEvent:
+  description: Available webhook event types
+  type: string
+  enum:
+    # User events
+    - user.created
+    - user.updated
+    - user.deleted
+    - user.activated
+    - user.deactivated
+    # Team events
+    - team.created
+    - team.updated
+    - team.deleted
+    - team.member_added
+    - team.member_removed
+    - team.member_role_changed
+    # Invitation events
+    - invitation.created
+    - invitation.sent
+    - invitation.accepted
+    - invitation.expired
+    - invitation.revoked
+    # Role events
+    - role.created
+    - role.updated
+    - role.deleted
+    - role.assigned
+    - role.removed
+    # Session events
+    - session.created
+    - session.expired
+    # Settings events
+    - settings.updated
+
+Webhook:
+  description: Webhook configuration for receiving event notifications
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique webhook identifier
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant this webhook belongs to
+    name:
+      type: string
+      maxLength: 100
+      description: Human-readable webhook name
+    description:
+      type: string
+      maxLength: 500
+      nullable: true
+      description: Description of webhook purpose
+    url:
+      type: string
+      format: uri
+      description: Endpoint URL to receive webhook payloads
+    secret:
+      type: string
+      minLength: 32
+      description: HMAC secret for signature verification
+    events:
+      type: array
+      items:
+        $ref: "#/WebhookEvent"
+      minItems: 1
+      description: Events this webhook subscribes to
+    headers:
+      type: object
+      additionalProperties:
+        type: string
+      nullable: true
+      description: Custom headers to include in webhook requests
+    is_active:
+      type: boolean
+      default: true
+      description: Whether webhook is active
+    retry_count:
+      type: integer
+      default: 3
+      minimum: 0
+      maximum: 10
+      description: Number of retry attempts on failure
+    timeout_seconds:
+      type: integer
+      default: 30
+      minimum: 5
+      maximum: 60
+      description: Request timeout in seconds
+    created_at:
+      type: datetime
+    updated_at:
+      type: datetime
+  required:
+    - tenant_id
+    - name
+    - url
+    - secret
+    - events
+
+WebhookDelivery:
+  description: Record of a webhook delivery attempt
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique delivery identifier
+    webhook_id:
+      type: string
+      format: uuid
+      description: Webhook this delivery belongs to
+    event:
+      $ref: "#/WebhookEvent"
+      description: Event type that triggered this delivery
+    payload:
+      type: object
+      additionalProperties: true
+      description: JSON payload sent to webhook
+    request_headers:
+      type: object
+      additionalProperties:
+        type: string
+      description: Headers sent with the request
+    response_status:
+      type: integer
+      nullable: true
+      description: HTTP response status code
+    response_headers:
+      type: object
+      additionalProperties:
+        type: string
+      nullable: true
+      description: Response headers received
+    response_body:
+      type: text
+      nullable: true
+      description: Response body (truncated if large)
+    duration_ms:
+      type: integer
+      nullable: true
+      description: Request duration in milliseconds
+    attempts:
+      type: integer
+      default: 1
+      description: Number of delivery attempts
+    status:
+      type: string
+      enum: [pending, success, failed, retrying]
+      description: Delivery status
+    error_message:
+      type: string
+      nullable: true
+      description: Error message if failed
+    next_retry_at:
+      type: datetime
+      nullable: true
+      description: When next retry will be attempted
+    delivered_at:
+      type: datetime
+      nullable: true
+      description: When successfully delivered
+    created_at:
+      type: datetime
+  required:
+    - webhook_id
+    - event
+    - payload
+    - status
+
+CreateWebhookRequest:
+  description: Request to create a new webhook
+  properties:
+    name:
+      type: string
+      maxLength: 100
+    description:
+      type: string
+      maxLength: 500
+      nullable: true
+    url:
+      type: string
+      format: uri
+    events:
+      type: array
+      items:
+        $ref: "#/WebhookEvent"
+      minItems: 1
+    headers:
+      type: object
+      additionalProperties:
+        type: string
+      nullable: true
+    retry_count:
+      type: integer
+      default: 3
+    timeout_seconds:
+      type: integer
+      default: 30
+  required:
+    - name
+    - url
+    - events
+
+UpdateWebhookRequest:
+  description: Request to update an existing webhook
+  properties:
+    name:
+      type: string
+      maxLength: 100
+      nullable: true
+    description:
+      type: string
+      maxLength: 500
+      nullable: true
+    url:
+      type: string
+      format: uri
+      nullable: true
+    events:
+      type: array
+      items:
+        $ref: "#/WebhookEvent"
+      nullable: true
+    headers:
+      type: object
+      additionalProperties:
+        type: string
+      nullable: true
+    is_active:
+      type: boolean
+      nullable: true
+    retry_count:
+      type: integer
+      nullable: true
+    timeout_seconds:
+      type: integer
+      nullable: true
+
+WebhookTestResult:
+  description: Result of testing a webhook
+  properties:
+    success:
+      type: boolean
+      description: Whether test was successful
+    status_code:
+      type: integer
+      nullable: true
+      description: HTTP response status
+    duration_ms:
+      type: integer
+      nullable: true
+      description: Request duration
+    error:
+      type: string
+      nullable: true
+      description: Error message if failed
+
+WebhookPayload:
+  description: Standard webhook payload format
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique event ID
+    event:
+      $ref: "#/WebhookEvent"
+      description: Event type
+    timestamp:
+      type: datetime
+      description: When event occurred
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant ID
+    data:
+      type: object
+      additionalProperties: true
+      description: Event-specific data
+
+# Signature Format
+# Header: X-Webhook-Signature
+# Algorithm: HMAC-SHA256
+# Format: sha256=<hex_digest>
+# Payload: Raw JSON body
+SignatureSpec:
+  header_name: "X-Webhook-Signature"
+  algorithm: "HMAC-SHA256"
+  format: "sha256={hex_digest}"
+  timestamp_header: "X-Webhook-Timestamp"
+  tolerance_seconds: 300

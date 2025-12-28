@@ -1,0 +1,293 @@
+# API Key Models
+# Defines API keys for third-party API access with rate limiting
+
+APIKeyEnvironment:
+  description: Environment type for API keys
+  type: string
+  enum:
+    - live    # Production environment
+    - test    # Testing/sandbox environment
+
+APIKey:
+  description: API key for programmatic access
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique API key identifier
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant this key belongs to
+    name:
+      type: string
+      maxLength: 100
+      description: Human-readable key name
+    description:
+      type: string
+      maxLength: 500
+      nullable: true
+      description: Description of key purpose
+    key:
+      type: string
+      pattern: "^sk_(live|test)_[a-f0-9]{32}$"
+      description: The API key value (format sk_live_xxx or sk_test_xxx)
+    key_prefix:
+      type: string
+      maxLength: 12
+      description: First 12 characters for display (e.g., "sk_live_abc1")
+    environment:
+      $ref: "#/APIKeyEnvironment"
+      description: Key environment (live or test)
+    permissions:
+      type: array
+      items:
+        type: string
+      description: List of permissions granted (e.g., ["users:read", "teams:*"])
+    rate_limit:
+      type: integer
+      default: 1000
+      minimum: 10
+      maximum: 100000
+      description: Maximum requests per hour
+    allowed_ips:
+      type: array
+      items:
+        type: string
+        format: ipv4
+      nullable: true
+      description: IP whitelist (null for no restriction)
+    allowed_origins:
+      type: array
+      items:
+        type: string
+      nullable: true
+      description: CORS origin whitelist
+    expires_at:
+      type: datetime
+      nullable: true
+      description: Expiration timestamp (null for never)
+    last_used_at:
+      type: datetime
+      nullable: true
+      description: When key was last used
+    last_used_ip:
+      type: string
+      nullable: true
+      description: IP address of last use
+    usage_count:
+      type: integer
+      default: 0
+      description: Total number of requests made
+    revoked_at:
+      type: datetime
+      nullable: true
+      description: When key was revoked (null if active)
+    revoked_by:
+      type: string
+      format: uuid
+      nullable: true
+      description: User who revoked the key
+    revoke_reason:
+      type: string
+      nullable: true
+      description: Reason for revocation
+    created_at:
+      type: datetime
+    created_by:
+      type: string
+      format: uuid
+      description: User who created the key
+  required:
+    - tenant_id
+    - name
+    - key
+    - key_prefix
+    - environment
+    - created_by
+
+APIKeySummary:
+  description: API key summary without sensitive data
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    key_prefix:
+      type: string
+      description: First 12 characters only
+    environment:
+      $ref: "#/APIKeyEnvironment"
+    permissions:
+      type: array
+      items:
+        type: string
+    rate_limit:
+      type: integer
+    expires_at:
+      type: datetime
+      nullable: true
+    last_used_at:
+      type: datetime
+      nullable: true
+    is_active:
+      type: boolean
+      description: Whether key is active (not expired, not revoked)
+    created_at:
+      type: datetime
+
+CreateAPIKeyRequest:
+  description: Request to create a new API key
+  properties:
+    name:
+      type: string
+      maxLength: 100
+    description:
+      type: string
+      maxLength: 500
+      nullable: true
+    environment:
+      $ref: "#/APIKeyEnvironment"
+      default: "live"
+    permissions:
+      type: array
+      items:
+        type: string
+      description: Permissions to grant (defaults to tenant's default permissions)
+    rate_limit:
+      type: integer
+      default: 1000
+    allowed_ips:
+      type: array
+      items:
+        type: string
+      nullable: true
+    allowed_origins:
+      type: array
+      items:
+        type: string
+      nullable: true
+    expires_in_days:
+      type: integer
+      nullable: true
+      description: Days until expiration (null for never)
+  required:
+    - name
+
+CreateAPIKeyResponse:
+  description: Response when creating an API key (includes full key only once)
+  properties:
+    id:
+      type: string
+      format: uuid
+    name:
+      type: string
+    key:
+      type: string
+      description: Full API key (only shown once at creation)
+    key_prefix:
+      type: string
+    environment:
+      $ref: "#/APIKeyEnvironment"
+    permissions:
+      type: array
+      items:
+        type: string
+    rate_limit:
+      type: integer
+    expires_at:
+      type: datetime
+      nullable: true
+    created_at:
+      type: datetime
+
+APIKeyUsage:
+  description: API key usage statistics
+  properties:
+    key_id:
+      type: string
+      format: uuid
+    period:
+      type: string
+      enum: [hour, day, week, month]
+      description: Statistics period
+    requests_count:
+      type: integer
+      description: Total requests in period
+    requests_by_endpoint:
+      type: object
+      additionalProperties:
+        type: integer
+      description: Request counts by endpoint
+    error_count:
+      type: integer
+      description: Failed requests in period
+    rate_limit_hits:
+      type: integer
+      description: Times rate limit was hit
+    avg_latency_ms:
+      type: number
+      description: Average response latency
+
+ValidateAPIKeyRequest:
+  description: Request to validate an API key
+  properties:
+    key:
+      type: string
+      description: API key to validate
+    required_permission:
+      type: string
+      nullable: true
+      description: Optional permission to check
+  required:
+    - key
+
+ValidateAPIKeyResponse:
+  description: API key validation result
+  properties:
+    valid:
+      type: boolean
+      description: Whether key is valid
+    tenant_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Tenant ID if valid
+    permissions:
+      type: array
+      items:
+        type: string
+      nullable: true
+      description: Key permissions if valid
+    has_permission:
+      type: boolean
+      nullable: true
+      description: Whether key has required permission
+    error:
+      type: string
+      nullable: true
+      description: Error message if invalid
+    error_code:
+      type: string
+      enum: [key_not_found, key_expired, key_revoked, ip_not_allowed, rate_limited, permission_denied]
+      nullable: true
+      description: Error code if invalid
+
+# Rate Limiting
+RateLimitInfo:
+  description: Rate limit status for an API key
+  properties:
+    limit:
+      type: integer
+      description: Maximum requests per hour
+    remaining:
+      type: integer
+      description: Remaining requests in current window
+    reset_at:
+      type: datetime
+      description: When the rate limit resets
+    retry_after:
+      type: integer
+      nullable: true
+      description: Seconds to wait if rate limited

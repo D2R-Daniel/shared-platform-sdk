@@ -1,0 +1,317 @@
+openapi: 3.0.3
+info:
+  title: Settings Service API
+  description: API for tenant/organization settings management
+  version: 1.0.0
+
+paths:
+  /settings:
+    get:
+      summary: Get all settings
+      description: Get all settings grouped by category
+      operationId: getAllSettings
+      tags:
+        - Settings
+      parameters:
+        - name: include_definitions
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include setting definitions with values
+      responses:
+        '200':
+          description: All settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllSettingsResponse'
+
+  /settings/{category}:
+    get:
+      summary: Get settings by category
+      operationId: getSettingsByCategory
+      tags:
+        - Settings
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/SettingCategory'
+      responses:
+        '200':
+          description: Category settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategorySettingsResponse'
+        '400':
+          description: Invalid category
+
+    put:
+      summary: Update category settings
+      operationId: updateCategorySettings
+      tags:
+        - Settings
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/SettingCategory'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingsRequest'
+      responses:
+        '200':
+          description: Settings updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategorySettingsResponse'
+        '400':
+          description: Invalid settings values
+        '404':
+          description: Category not found
+
+  /settings/definitions:
+    get:
+      summary: Get setting definitions
+      description: Get all available setting definitions
+      operationId: getSettingDefinitions
+      tags:
+        - Definitions
+      parameters:
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/SettingCategory'
+          description: Filter by category
+        - name: is_public
+          in: query
+          schema:
+            type: boolean
+          description: Filter public/private settings
+      responses:
+        '200':
+          description: Setting definitions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefinitionsResponse'
+
+  /settings/reset/{category}:
+    post:
+      summary: Reset category to defaults
+      description: Reset all settings in a category to their default values
+      operationId: resetCategorySettings
+      tags:
+        - Settings
+      parameters:
+        - name: category
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/SettingCategory'
+      responses:
+        '200':
+          description: Settings reset to defaults
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategorySettingsResponse'
+
+  /settings/{key}:
+    get:
+      summary: Get single setting
+      operationId: getSetting
+      tags:
+        - Settings
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Setting key (e.g., "features.sso_enabled")
+      responses:
+        '200':
+          description: Setting value
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingValueResponse'
+        '404':
+          description: Setting not found
+
+    put:
+      summary: Update single setting
+      operationId: updateSetting
+      tags:
+        - Settings
+      parameters:
+        - name: key
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSettingRequest'
+      responses:
+        '200':
+          description: Setting updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SettingValueResponse'
+        '400':
+          description: Invalid value
+        '404':
+          description: Setting not found
+
+components:
+  schemas:
+    SettingCategory:
+      type: string
+      enum:
+        - general
+        - branding
+        - features
+        - integrations
+        - security
+        - notifications
+
+    TenantSettings:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        category:
+          $ref: '#/components/schemas/SettingCategory'
+        settings:
+          type: object
+          additionalProperties: true
+        updated_at:
+          type: string
+          format: date-time
+        updated_by:
+          type: string
+          format: uuid
+
+    SettingDefinition:
+      type: object
+      properties:
+        key:
+          type: string
+        type:
+          type: string
+          enum: [boolean, string, number, json, array]
+        default_value: {}
+        label:
+          type: string
+        description:
+          type: string
+        category:
+          $ref: '#/components/schemas/SettingCategory'
+        is_public:
+          type: boolean
+        is_readonly:
+          type: boolean
+        validation_rules:
+          type: object
+          properties:
+            min:
+              type: number
+            max:
+              type: number
+            minLength:
+              type: integer
+            maxLength:
+              type: integer
+            pattern:
+              type: string
+            enum:
+              type: array
+        display_order:
+          type: integer
+
+    AllSettingsResponse:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        settings:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties: true
+        definitions:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: '#/components/schemas/SettingDefinition'
+        updated_at:
+          type: string
+          format: date-time
+
+    CategorySettingsResponse:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        category:
+          $ref: '#/components/schemas/SettingCategory'
+        settings:
+          type: object
+          additionalProperties: true
+        updated_at:
+          type: string
+          format: date-time
+
+    UpdateSettingsRequest:
+      type: object
+      required:
+        - settings
+      properties:
+        settings:
+          type: object
+          additionalProperties: true
+
+    DefinitionsResponse:
+      type: object
+      properties:
+        definitions:
+          type: array
+          items:
+            $ref: '#/components/schemas/SettingDefinition'
+
+    SettingValueResponse:
+      type: object
+      properties:
+        key:
+          type: string
+        value: {}
+        definition:
+          $ref: '#/components/schemas/SettingDefinition'
+
+    UpdateSettingRequest:
+      type: object
+      required:
+        - value
+      properties:
+        value: {}

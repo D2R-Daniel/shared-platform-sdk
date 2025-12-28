@@ -9,6 +9,7 @@ Usage:
     from shared_platform import AuditClient, FeatureFlagClient
     from shared_platform import TenantClient, DepartmentClient
     from shared_platform import RoleClient, TeamClient, InvitationClient
+    from shared_platform import EmailClient, SettingsClient, WebhookClient, APIKeyClient
     from shared_platform.models import User, UserContext
     from shared_platform.events import EmailNotificationEvent
 """
@@ -22,6 +23,10 @@ from shared_platform.tenants import TenantClient, DepartmentClient
 from shared_platform.permissions import RoleClient
 from shared_platform.teams import TeamClient
 from shared_platform.invitations import InvitationClient
+from shared_platform.email import EmailClient
+from shared_platform.settings import SettingsClient
+from shared_platform.webhooks import WebhookClient, generate_signature, verify_signature
+from shared_platform.apikeys import APIKeyClient
 
 __version__ = "0.1.0"
 __all__ = [
@@ -35,5 +40,11 @@ __all__ = [
     "RoleClient",
     "TeamClient",
     "InvitationClient",
+    "EmailClient",
+    "SettingsClient",
+    "WebhookClient",
+    "generate_signature",
+    "verify_signature",
+    "APIKeyClient",
     "__version__",
 ]

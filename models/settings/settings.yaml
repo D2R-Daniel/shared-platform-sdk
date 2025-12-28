@@ -1,0 +1,233 @@
+# Settings Models
+# Defines tenant/organization configuration and setting definitions
+
+SettingCategory:
+  description: Categories for organizing settings
+  type: string
+  enum:
+    - general      # Basic tenant info, timezone, locale
+    - branding     # Logo, colors, custom CSS
+    - features     # Feature flags (sso_enabled, analytics_enabled)
+    - integrations # Third-party service configs
+    - security     # Password policies, session timeouts
+    - notifications # Email/notification preferences
+
+TenantSettings:
+  description: Settings for a specific tenant and category
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique settings record identifier
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant these settings belong to
+    category:
+      $ref: "#/SettingCategory"
+      description: Settings category
+    settings:
+      type: object
+      additionalProperties: true
+      description: JSON object containing setting key-value pairs
+    updated_at:
+      type: datetime
+      description: Last update timestamp
+    updated_by:
+      type: string
+      format: uuid
+      nullable: true
+      description: User who last updated these settings
+  required:
+    - tenant_id
+    - category
+    - settings
+
+SettingDefinition:
+  description: Definition of a configurable setting
+  properties:
+    key:
+      type: string
+      pattern: "^[a-z][a-z0-9_.]+$"
+      description: Unique setting key (e.g., "features.sso_enabled", "security.session_timeout")
+    type:
+      type: string
+      enum: [boolean, string, number, json, array]
+      description: Data type of the setting value
+    default_value:
+      type: any
+      description: Default value if not set
+    label:
+      type: string
+      description: Human-readable label
+    description:
+      type: string
+      description: Detailed description of the setting
+    category:
+      $ref: "#/SettingCategory"
+      description: Category this setting belongs to
+    is_public:
+      type: boolean
+      default: false
+      description: Whether non-admin users can view this setting
+    is_readonly:
+      type: boolean
+      default: false
+      description: Whether this setting can be modified by tenants
+    validation_rules:
+      type: object
+      nullable: true
+      description: JSON Schema validation rules for the value
+      properties:
+        min:
+          type: number
+          nullable: true
+        max:
+          type: number
+          nullable: true
+        minLength:
+          type: integer
+          nullable: true
+        maxLength:
+          type: integer
+          nullable: true
+        pattern:
+          type: string
+          nullable: true
+        enum:
+          type: array
+          nullable: true
+    display_order:
+      type: integer
+      default: 0
+      description: Order for display in UI
+  required:
+    - key
+    - type
+    - label
+    - category
+
+UpdateSettingsRequest:
+  description: Request to update settings for a category
+  properties:
+    settings:
+      type: object
+      additionalProperties: true
+      description: Key-value pairs of settings to update
+  required:
+    - settings
+
+SettingsResponse:
+  description: Response containing settings grouped by category
+  properties:
+    tenant_id:
+      type: string
+      format: uuid
+    settings:
+      type: object
+      description: Settings grouped by category
+      additionalProperties:
+        type: object
+        additionalProperties: true
+    updated_at:
+      type: datetime
+
+# Standard Setting Keys by Category
+StandardSettings:
+  general:
+    - key: general.timezone
+      type: string
+      default: "UTC"
+      description: Default timezone for the tenant
+    - key: general.locale
+      type: string
+      default: "en-US"
+      description: Default locale for formatting
+    - key: general.date_format
+      type: string
+      default: "YYYY-MM-DD"
+      description: Date format pattern
+    - key: general.time_format
+      type: string
+      default: "HH:mm:ss"
+      description: Time format pattern
+
+  branding:
+    - key: branding.logo_url
+      type: string
+      default: null
+      description: URL to tenant logo
+    - key: branding.favicon_url
+      type: string
+      default: null
+      description: URL to favicon
+    - key: branding.primary_color
+      type: string
+      default: "#3B82F6"
+      description: Primary brand color (hex)
+    - key: branding.secondary_color
+      type: string
+      default: "#1E40AF"
+      description: Secondary brand color (hex)
+    - key: branding.custom_css
+      type: string
+      default: null
+      description: Custom CSS overrides
+
+  features:
+    - key: features.sso_enabled
+      type: boolean
+      default: false
+      description: Enable SSO authentication
+    - key: features.mfa_required
+      type: boolean
+      default: false
+      description: Require multi-factor authentication
+    - key: features.analytics_enabled
+      type: boolean
+      default: true
+      description: Enable analytics tracking
+    - key: features.api_access_enabled
+      type: boolean
+      default: true
+      description: Enable API access
+
+  security:
+    - key: security.password_min_length
+      type: number
+      default: 8
+      description: Minimum password length
+    - key: security.password_require_uppercase
+      type: boolean
+      default: true
+      description: Require uppercase in passwords
+    - key: security.password_require_numbers
+      type: boolean
+      default: true
+      description: Require numbers in passwords
+    - key: security.password_require_symbols
+      type: boolean
+      default: false
+      description: Require symbols in passwords
+    - key: security.session_timeout_minutes
+      type: number
+      default: 60
+      description: Session timeout in minutes
+    - key: security.max_login_attempts
+      type: number
+      default: 5
+      description: Max failed login attempts before lockout
+    - key: security.lockout_duration_minutes
+      type: number
+      default: 15
+      description: Account lockout duration
+
+  notifications:
+    - key: notifications.email_enabled
+      type: boolean
+      default: true
+      description: Enable email notifications
+    - key: notifications.digest_frequency
+      type: string
+      default: "daily"
+      description: Email digest frequency (immediate, daily, weekly)

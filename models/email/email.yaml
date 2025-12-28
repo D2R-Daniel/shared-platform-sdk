@@ -1,0 +1,231 @@
+# Email Models
+# Defines email templates and SMTP configuration for tenant email operations
+
+EmailTemplate:
+  description: Email template with variable substitution support
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique template identifier
+    tenant_id:
+      type: string
+      format: uuid
+      nullable: true
+      description: Tenant ID (null for system templates)
+    name:
+      type: string
+      maxLength: 100
+      description: Human-readable template name
+    slug:
+      type: string
+      pattern: "^[a-z0-9-]+$"
+      description: URL-safe template identifier (unique per tenant)
+    subject:
+      type: string
+      maxLength: 500
+      description: Email subject line (supports variables)
+    html_content:
+      type: text
+      description: HTML email body (supports variables)
+    text_content:
+      type: text
+      nullable: true
+      description: Plain text email body (optional fallback)
+    variables:
+      type: array
+      items:
+        type: string
+      description: List of variable names used in template (e.g., ["user_name", "reset_url"])
+    category:
+      type: string
+      enum: [invitation, verification, notification, reminder, welcome, password_reset, alert]
+      description: Template category for organization
+    is_system:
+      type: boolean
+      default: false
+      description: Whether this is a built-in system template
+    is_active:
+      type: boolean
+      default: true
+      description: Whether template is active and usable
+    created_at:
+      type: datetime
+      description: Creation timestamp
+    updated_at:
+      type: datetime
+      description: Last update timestamp
+  required:
+    - name
+    - slug
+    - subject
+    - html_content
+    - category
+
+EmailConfig:
+  description: SMTP configuration for tenant email sending
+  properties:
+    id:
+      type: string
+      format: uuid
+      description: Unique configuration identifier
+    tenant_id:
+      type: string
+      format: uuid
+      description: Tenant this configuration belongs to
+    smtp_host:
+      type: string
+      description: SMTP server hostname
+    smtp_port:
+      type: integer
+      default: 587
+      description: SMTP server port
+    smtp_user:
+      type: string
+      description: SMTP authentication username
+    smtp_password_encrypted:
+      type: string
+      description: Encrypted SMTP password
+    use_tls:
+      type: boolean
+      default: true
+      description: Whether to use TLS encryption
+    from_name:
+      type: string
+      maxLength: 100
+      description: Sender display name
+    from_email:
+      type: string
+      format: email
+      description: Sender email address
+    reply_to:
+      type: string
+      format: email
+      nullable: true
+      description: Reply-to email address
+    is_active:
+      type: boolean
+      default: true
+      description: Whether this configuration is active
+    verified_at:
+      type: datetime
+      nullable: true
+      description: When the configuration was last verified
+    created_at:
+      type: datetime
+    updated_at:
+      type: datetime
+  required:
+    - tenant_id
+    - smtp_host
+    - smtp_port
+    - smtp_user
+    - from_name
+    - from_email
+
+SendEmailRequest:
+  description: Request to send an email directly
+  properties:
+    to:
+      type: array
+      items:
+        type: string
+        format: email
+      minItems: 1
+      description: Recipient email addresses
+    cc:
+      type: array
+      items:
+        type: string
+        format: email
+      nullable: true
+      description: CC recipients
+    bcc:
+      type: array
+      items:
+        type: string
+        format: email
+      nullable: true
+      description: BCC recipients
+    subject:
+      type: string
+      description: Email subject
+    html_content:
+      type: text
+      description: HTML email body
+    text_content:
+      type: text
+      nullable: true
+      description: Plain text body (optional)
+    from_name:
+      type: string
+      nullable: true
+      description: Override sender name
+    reply_to:
+      type: string
+      format: email
+      nullable: true
+      description: Override reply-to address
+  required:
+    - to
+    - subject
+    - html_content
+
+SendTemplateRequest:
+  description: Request to send a templated email
+  properties:
+    template_slug:
+      type: string
+      description: Template slug to use
+    to:
+      type: array
+      items:
+        type: string
+        format: email
+      minItems: 1
+      description: Recipient email addresses
+    cc:
+      type: array
+      items:
+        type: string
+        format: email
+      nullable: true
+    bcc:
+      type: array
+      items:
+        type: string
+        format: email
+      nullable: true
+    variables:
+      type: object
+      additionalProperties: true
+      description: Variable values to substitute in template
+    from_name:
+      type: string
+      nullable: true
+    reply_to:
+      type: string
+      format: email
+      nullable: true
+  required:
+    - template_slug
+    - to
+    - variables
+
+EmailSendResult:
+  description: Result of sending an email
+  properties:
+    success:
+      type: boolean
+      description: Whether the email was sent successfully
+    message_id:
+      type: string
+      nullable: true
+      description: Message ID from SMTP server
+    recipients_count:
+      type: integer
+      description: Number of recipients
+    error:
+      type: string
+      nullable: true
+      description: Error message if failed
