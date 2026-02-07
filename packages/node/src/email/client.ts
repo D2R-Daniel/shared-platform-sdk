@@ -14,11 +14,29 @@ import {
   TemplateListResponse,
   EmailTestResult,
   ListTemplatesParams,
+  TemplatePreview,
+  TemplateVersion,
+  TemplateVersionListResponse,
+  TemplateLocale,
+  TemplateLocaleListResponse,
+  SetTemplateLocaleRequest,
+  EmailProvider,
+  EmailProviderListResponse,
+  ConfigureProviderRequest,
+  BatchSendRequest,
+  BatchSendResult,
+  EmailSendDetails,
+  SendHistoryListResponse,
+  ListSendHistoryParams,
 } from './types';
 import {
   TemplateNotFoundError,
   TemplateSlugExistsError,
   EmailConfigError,
+  VersionNotFoundError,
+  LocaleNotFoundError,
+  ProviderConfigError,
+  BatchTooLargeError,
 } from './errors';
 
 export interface EmailClientOptions {
@@ -79,11 +97,27 @@ export class EmailClient {
 
       if (!response.ok) {
         const status = response.status;
+        let data: Record<string, unknown> = {};
+        try {
+          data = (await response.json()) as Record<string, unknown>;
+        } catch {
+          // ignore
+        }
         if (status === 404) {
           throw new TemplateNotFoundError('unknown');
         }
         if (status === 409) {
           throw new TemplateSlugExistsError('unknown');
+        }
+        if (status === 413) {
+          const recipientCount = (data.recipient_count as number) || 0;
+          const maxRecipients = (data.max_recipients as number) || 0;
+          throw new BatchTooLargeError(recipientCount, maxRecipients);
+        }
+        if (status === 422) {
+          const providerType = (data.provider_type as string) || 'unknown';
+          const message = (data.message as string) || undefined;
+          throw new ProviderConfigError(providerType, message);
         }
         if (status === 503) {
           throw new EmailConfigError('Email service unavailable');
@@ -95,7 +129,7 @@ export class EmailClient {
         return undefined as T;
       }
 
-      return response.json();
+      return (await response.json()) as T;
     } finally {
       clearTimeout(timeoutId);
     }
@@ -202,5 +236,193 @@ export class EmailClient {
   async testConfig(recipient?: string): Promise<EmailTestResult> {
     const body = recipient ? { recipient } : {};
     return this.request('POST', '/email/config/test', body);
+  }
+
+  // Template Preview Operations
+
+  async previewTemplate(
+    templateId: string,
+    variables: Record<string, string>,
+    locale?: string
+  ): Promise<TemplatePreview> {
+    try {
+      return await this.request('POST', `/email/templates/${templateId}/preview`, {
+        variables,
+        locale,
+      });
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) {
+        throw new TemplateNotFoundError(templateId);
+      }
+      throw error;
+    }
+  }
+
+  async previewTemplateBySlug(
+    slug: string,
+    variables: Record<string, string>,
+    locale?: string
+  ): Promise<TemplatePreview> {
+    try {
+      return await this.request('POST', `/email/templates/slug/${slug}/preview`, {
+        variables,
+        locale,
+      });
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) {
+        throw new TemplateNotFoundError(slug);
+      }
+      throw error;
+    }
+  }
+
+  // Template Versioning Operations
+
+  async listTemplateVersions(templateId: string): Promise<TemplateVersionListResponse> {
+    try {
+      return await this.request('GET', `/email/templates/${templateId}/versions`);
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) {
+        throw new TemplateNotFoundError(templateId);
+      }
+      throw error;
+    }
+  }
+
+  async getTemplateVersion(
+    templateId: string,
+    version: number
+  ): Promise<TemplateVersion> {
+    try {
+      return await this.request(
+        'GET',
+        `/email/templates/${templateId}/versions/${version}`
+      );
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) {
+        throw new VersionNotFoundError(templateId, version);
+      }
+      throw error;
+    }
+  }
+
+  async revertToVersion(
+    templateId: string,
+    version: number
+  ): Promise<EmailTemplate> {
+    try {
+      return await this.request(
+        'POST',
+        `/email/templates/${templateId}/versions/${version}/revert`
+      );
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) {
+        throw new VersionNotFoundError(templateId, version);
+      }
+      throw error;
+    }
+  }
+
+  // Locale/i18n Operations
+
+  async setTemplateLocale(
+    templateId: string,
+    locale: string,
+    content: SetTemplateLocaleRequest
+  ): Promise<TemplateLocale> {
+    try {
+      return await this.request(
+        'PUT',
+        `/email/templates/${templateId}/locales/${locale}`,
+        content
+      );
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) {
+        throw new TemplateNotFoundError(templateId);
+      }
+      throw error;
+    }
+  }
+
+  async getTemplateLocale(
+    templateId: string,
+    locale: string
+  ): Promise<TemplateLocale> {
+    try {
+      return await this.request(
+        'GET',
+        `/email/templates/${templateId}/locales/${locale}`
+      );
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) {
+        throw new LocaleNotFoundError(templateId, locale);
+      }
+      throw error;
+    }
+  }
+
+  async listTemplateLocales(
+    templateId: string
+  ): Promise<TemplateLocaleListResponse> {
+    try {
+      return await this.request('GET', `/email/templates/${templateId}/locales`);
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) {
+        throw new TemplateNotFoundError(templateId);
+      }
+      throw error;
+    }
+  }
+
+  async deleteTemplateLocale(
+    templateId: string,
+    locale: string
+  ): Promise<void> {
+    try {
+      await this.request(
+        'DELETE',
+        `/email/templates/${templateId}/locales/${locale}`
+      );
+    } catch (error) {
+      if (error instanceof TemplateNotFoundError) {
+        throw new LocaleNotFoundError(templateId, locale);
+      }
+      throw error;
+    }
+  }
+
+  // Provider Operations
+
+  async listProviders(): Promise<EmailProviderListResponse> {
+    return this.request('GET', '/email/providers');
+  }
+
+  async configureProvider(
+    config: ConfigureProviderRequest
+  ): Promise<EmailProvider> {
+    return this.request('POST', '/email/providers', config);
+  }
+
+  // Batch Send Operations
+
+  async sendBatch(request: BatchSendRequest): Promise<BatchSendResult> {
+    return this.request('POST', '/email/send-batch', request);
+  }
+
+  // Send History Operations
+
+  async listSendHistory(
+    params?: ListSendHistoryParams
+  ): Promise<SendHistoryListResponse> {
+    return this.request(
+      'GET',
+      '/email/history',
+      undefined,
+      params as Record<string, unknown>
+    );
+  }
+
+  async getSendDetails(messageId: string): Promise<EmailSendDetails> {
+    return this.request('GET', `/email/history/${messageId}`);
   }
 }

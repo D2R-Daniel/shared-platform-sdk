@@ -22,11 +22,9 @@ export class FeatureFlagClient {
   private client: AxiosInstance;
   private accessToken?: string;
   private cache: Map<string, { value: any; expiry: number }> = new Map();
-  private cacheTtl: number;
 
   constructor(config: FeatureFlagClientConfig) {
     this.accessToken = config.accessToken;
-    this.cacheTtl = config.cacheTtl || 60000; // 60 seconds default
 
     this.client = axios.create({
       baseURL: config.baseUrl,

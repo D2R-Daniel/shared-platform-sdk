@@ -2,8 +2,7 @@
  * HTTP client for API key operations.
  */
 
-import {
-  APIKeyEnvironment,
+import type {
   APIKeySummary,
   APIKeyUsage,
   CreateAPIKeyRequest,
@@ -83,7 +82,7 @@ export class APIKeyClient {
         return undefined as T;
       }
 
-      return response.json();
+      return (await response.json()) as T;
     } finally {
       clearTimeout(timeoutId);
     }

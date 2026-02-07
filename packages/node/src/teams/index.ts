@@ -2,9 +2,10 @@
  * Teams module for team/group management.
  */
 
-export { TeamClient, TeamClientConfig } from './client';
+export { TeamClient } from './client';
+export type { TeamClientConfig } from './client';
 
-export {
+export type {
   Team,
   TeamSummary,
   TeamTree,

@@ -4,4 +4,5 @@
 
 export * from './types';
 export * from './errors';
-export { APIKeyClient, APIKeyClientOptions } from './client';
+export { APIKeyClient } from './client';
+export type { APIKeyClientOptions } from './client';

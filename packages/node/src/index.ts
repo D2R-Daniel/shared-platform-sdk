@@ -19,6 +19,17 @@ export { AuthClient } from './auth';
 export { UserClient } from './users';
 export { NotificationClient } from './notifications';
 export { AuditClient } from './audit';
+// Re-export key audit error classes
+export {
+  AuditError,
+  AuditEntryNotFoundError,
+  IntegrityViolationError,
+} from './audit';
+// Re-export audit event constants
+export {
+  ALL_AUDIT_EVENT_TYPES,
+  AUDIT_EVENT_CATEGORIES,
+} from './audit';
 export { FeatureFlagClient } from './features';
 export { TenantClient, DepartmentClient } from './tenants';
 export { RoleClient, matchesPermission, hasAnyPermission, hasAllPermissions } from './permissions';
@@ -28,6 +39,7 @@ export { EmailClient } from './email';
 export { SettingsClient } from './settings';
 export { WebhookClient, generateSignature, verifySignature } from './webhooks';
 export { APIKeyClient } from './apikeys';
+export { SessionClient } from './sessions';
 
 export type {
   // Auth types
@@ -39,6 +51,9 @@ export type {
   Role,
   Permission,
 } from './auth';
+
+// Re-export AssuranceLevel as a value (enum)
+export { AssuranceLevel } from './auth';
 
 export type {
   // User types
@@ -71,6 +86,26 @@ export type {
   AuditEventType,
   AuditLogEntry,
   AuditLogListResponse,
+  AuditLogQuery,
+  AuditActor,
+  AuditTarget,
+  AuditChange,
+  AuditContext,
+  AuditSeverity,
+  CreateAuditEventRequest,
+  BatchAuditResult,
+  RetentionPolicy,
+  ExportRequest as AuditExportRequest,
+  ExportResult as AuditExportResult,
+  IntegrityVerificationResult,
+  IntegrityProof,
+  AuditStream,
+  CreateStreamRequest,
+  UpdateStreamRequest,
+  AlertRule,
+  CreateAlertRuleRequest,
+  UpdateAlertRuleRequest,
+  PortalLink,
 } from './audit';
 
 export type {
@@ -154,6 +189,29 @@ export type {
   UpdateTemplateRequest,
   TemplateListResponse,
   TemplateCategory,
+  // New types
+  ProviderType,
+  EmailSendStatus,
+  DeliveryEventType,
+  TemplateVersion,
+  TemplateVersionListResponse,
+  TemplateLocale,
+  TemplateLocaleListResponse,
+  TemplatePreview,
+  SetTemplateLocaleRequest,
+  Attachment,
+  BatchRecipient,
+  BatchSendRequest,
+  BatchSendFailure,
+  BatchSendResult,
+  EmailSendRecord,
+  SendHistoryListResponse,
+  ListSendHistoryParams,
+  EmailDeliveryEvent,
+  EmailSendDetails,
+  EmailProvider,
+  ConfigureProviderRequest,
+  EmailProviderListResponse,
 } from './email';
 
 export type {
@@ -165,6 +223,26 @@ export type {
   SettingValue,
   AllSettingsResponse,
   CategorySettingsResponse,
+  // New types
+  ChangeSource,
+  Environment,
+  SettingSource,
+  ImportStrategy,
+  ExportFormat,
+  SettingChange,
+  SettingChangeListResponse,
+  EnvironmentOverride,
+  EnvironmentOverrideListResponse,
+  ExportResult,
+  ImportError,
+  ImportResult,
+  ImportSettingsRequest,
+  LockedSetting,
+  LockedSettingListResponse,
+  EffectiveSetting,
+  BulkUpdateItem,
+  BulkUpdateError,
+  BulkUpdateResult,
 } from './settings';
 
 export type {
@@ -194,5 +272,25 @@ export type {
   RateLimitInfo,
   APIKeyListResponse,
 } from './apikeys';
+
+export type {
+  // Session types
+  SessionStatus,
+  DeviceType,
+  ConcurrentLimitAction,
+  DeviceInfo,
+  GeoLocation,
+  SessionDetail,
+  SessionActivity,
+  SessionPolicy,
+  SessionStats,
+  SessionListOptions,
+  AdminSessionListOptions,
+  SessionListResponse,
+  SessionActivityResponse,
+} from './sessions';
+
+// Re-export ActivityType as a value (enum)
+export { ActivityType } from './sessions';
 
 export const VERSION = '0.1.0';

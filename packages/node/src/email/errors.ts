@@ -60,3 +60,80 @@ export class SMTPConnectionError extends EmailError {
     this.port = port;
   }
 }
+
+export class LocaleNotFoundError extends EmailError {
+  public readonly templateId: string;
+  public readonly locale: string;
+
+  constructor(templateId: string, locale: string) {
+    super(`Locale '${locale}' not found for template '${templateId}'`);
+    this.name = 'LocaleNotFoundError';
+    this.templateId = templateId;
+    this.locale = locale;
+  }
+}
+
+export class VersionNotFoundError extends EmailError {
+  public readonly templateId: string;
+  public readonly version: number;
+
+  constructor(templateId: string, version: number) {
+    super(`Version ${version} not found for template '${templateId}'`);
+    this.name = 'VersionNotFoundError';
+    this.templateId = templateId;
+    this.version = version;
+  }
+}
+
+export class AttachmentTooLargeError extends EmailError {
+  public readonly filename: string;
+  public readonly sizeBytes: number;
+  public readonly maxBytes: number;
+
+  constructor(filename: string, sizeBytes: number, maxBytes: number) {
+    super(
+      `Attachment '${filename}' is ${sizeBytes} bytes, exceeding limit of ${maxBytes} bytes`
+    );
+    this.name = 'AttachmentTooLargeError';
+    this.filename = filename;
+    this.sizeBytes = sizeBytes;
+    this.maxBytes = maxBytes;
+  }
+}
+
+export class BatchTooLargeError extends EmailError {
+  public readonly recipientCount: number;
+  public readonly maxRecipients: number;
+
+  constructor(recipientCount: number, maxRecipients: number) {
+    super(
+      `Batch contains ${recipientCount} recipients, exceeding limit of ${maxRecipients}`
+    );
+    this.name = 'BatchTooLargeError';
+    this.recipientCount = recipientCount;
+    this.maxRecipients = maxRecipients;
+  }
+}
+
+export class ProviderConfigError extends EmailError {
+  public readonly providerType: string;
+
+  constructor(providerType: string, message?: string) {
+    const msg = message
+      ? `Provider '${providerType}' configuration error: ${message}`
+      : `Provider '${providerType}' configuration error`;
+    super(msg);
+    this.name = 'ProviderConfigError';
+    this.providerType = providerType;
+  }
+}
+
+export class ProviderUnavailableError extends EmailError {
+  public readonly providerType: string;
+
+  constructor(providerType: string) {
+    super(`Email provider '${providerType}' is unavailable`);
+    this.name = 'ProviderUnavailableError';
+    this.providerType = providerType;
+  }
+}

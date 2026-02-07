@@ -2,9 +2,10 @@
  * Invitations module for user onboarding and team invites.
  */
 
-export { InvitationClient, InvitationClientConfig } from './client';
+export { InvitationClient } from './client';
+export type { InvitationClientConfig } from './client';
 
-export {
+export type {
   Invitation,
   InvitationSummary,
   InvitationStatus,

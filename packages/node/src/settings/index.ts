@@ -4,4 +4,5 @@
 
 export * from './types';
 export * from './errors';
-export { SettingsClient, SettingsClientOptions } from './client';
+export { SettingsClient } from './client';
+export type { SettingsClientOptions } from './client';

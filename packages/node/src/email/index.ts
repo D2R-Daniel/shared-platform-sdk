@@ -4,4 +4,5 @@
 
 export * from './types';
 export * from './errors';
-export { EmailClient, EmailClientOptions } from './client';
+export { EmailClient } from './client';
+export type { EmailClientOptions } from './client';

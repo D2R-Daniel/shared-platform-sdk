@@ -6,7 +6,6 @@ import {
   Webhook,
   WebhookDelivery,
   WebhookEvent,
-  DeliveryStatus,
   WebhookListResponse,
   DeliveryListResponse,
   CreateWebhookRequest,
@@ -86,7 +85,7 @@ export class WebhookClient {
         return undefined as T;
       }
 
-      return response.json();
+      return (await response.json()) as T;
     } finally {
       clearTimeout(timeoutId);
     }

@@ -4,13 +4,13 @@
 
 export {
   RoleClient,
-  RoleClientConfig,
   matchesPermission,
   hasAnyPermission,
   hasAllPermissions,
 } from './client';
+export type { RoleClientConfig } from './client';
 
-export {
+export type {
   Role,
   RoleSummary,
   RoleAssignment,
