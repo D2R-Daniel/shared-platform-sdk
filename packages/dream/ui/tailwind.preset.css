@@ -1,0 +1,41 @@
+/* tailwind.preset.css — Tailwind v4.0 CSS preset
+ * Usage: @import '@dream/ui/tailwind.preset.css';
+ */
+
+@theme inline {
+  --color-background: hsl(var(--dream-color-background));
+  --color-foreground: hsl(var(--dream-color-foreground));
+
+  --color-card: hsl(var(--dream-color-card));
+  --color-card-foreground: hsl(var(--dream-color-card-foreground));
+
+  --color-popover: hsl(var(--dream-color-popover));
+  --color-popover-foreground: hsl(var(--dream-color-popover-foreground));
+
+  --color-primary: hsl(var(--dream-color-primary));
+  --color-primary-foreground: hsl(var(--dream-color-primary-foreground));
+
+  --color-secondary: hsl(var(--dream-color-secondary));
+  --color-secondary-foreground: hsl(var(--dream-color-secondary-foreground));
+
+  --color-accent: hsl(var(--dream-color-accent));
+  --color-accent-foreground: hsl(var(--dream-color-accent-foreground));
+
+  --color-destructive: hsl(var(--dream-color-destructive));
+  --color-destructive-foreground: hsl(var(--dream-color-destructive-foreground));
+
+  --color-muted: hsl(var(--dream-color-muted));
+  --color-muted-foreground: hsl(var(--dream-color-muted-foreground));
+
+  --color-border: hsl(var(--dream-color-border));
+  --color-input: hsl(var(--dream-color-input));
+  --color-ring: hsl(var(--dream-color-ring));
+
+  --radius-sm: var(--dream-radius-sm);
+  --radius-md: var(--dream-radius-md);
+  --radius-lg: var(--dream-radius-lg);
+  --radius-xl: var(--dream-radius-xl);
+
+  --font-sans: var(--dream-font-sans);
+  --font-mono: var(--dream-font-mono);
+}
