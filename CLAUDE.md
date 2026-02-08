@@ -152,15 +152,82 @@ HTTP status codes map to exceptions consistently:
 | 429 | `RateLimitError` | `RateLimitError` | `RateLimitException` |
 | 5xx | `ServerError` | `ServerError` | `ServerException` |
 
+## Speckit Lifecycle (MANDATORY)
+
+**All non-trivial features MUST follow the speckit lifecycle.** This is enforced by the project constitution (`.specify/memory/constitution.md` v2.0.0). Skipping phases is a constitution violation.
+
+### Lifecycle Phases
+
+```
+specify → clarify → research → plan → tasks → implement → verify
+```
+
+| Phase | Command | Produces | Required? |
+|-------|---------|----------|-----------|
+| 0. Init | `./.specify/scripts/bash/create-new-feature.sh` | Branch + `specs/{###}-{name}/` dir | Yes |
+| 1. Specify | `/speckit.specify` | `specs/{###}/spec.md` | **Yes — IRON LAW** |
+| 2. Clarify | `/speckit.clarify` | Refined spec.md (ambiguities resolved) | Recommended |
+| 3. Research | `/speckit.research` | `specs/{###}/research.md` | For novel features |
+| 4. Plan | `/speckit.plan` | `plan.md`, `data-model.md`, `contracts/`, etc. | **Yes — IRON LAW** |
+| 5. Tasks | `/speckit.tasks` | `specs/{###}/tasks.md` | **Yes** |
+| 6. Implement | `/speckit.implement` | Working code with tests | **Yes — TDD** |
+| 7. Verify | Fresh test/type/build runs | Evidence of all gates passing | **Yes — IRON LAW** |
+
+### Constitution Iron Laws
+
+These are **non-negotiable**. All code reviews verify compliance.
+
+1. **Specification-Driven Development** — A written `spec.md` MUST exist before implementation begins. The spec is the single source of truth for acceptance criteria.
+2. **Test-First Development (TDD)** — NO production code without a failing test first. Red → Green → Refactor. "I'll add tests later" is rejected.
+3. **Evidence-Based Verification** — NO completion claims without fresh verification evidence. Run commands fresh, read complete output, report actual numbers ("47 tests passed, 0 failed").
+4. **Systematic Debugging** — NO fixes without root cause investigation first. One small change per hypothesis. Create failing test before implementing fix.
+5. **Discovery-First Design** — MUST explore requirements & alternatives before implementation. Propose 2-3 approaches with trade-offs.
+6. **Plan-Driven Development** — Multi-step tasks MUST have a written `plan.md` before coding. Plans contain bite-sized tasks (2-5 min each) with exact file paths, code, commands, and expected output.
+7. **Security-First Design** — No secrets in code/logs. HTTPS enforced. All inputs validated. Secure crypto only.
+8. **Simplicity & Maintainability** — Single responsibility. No premature abstraction. YAGNI. Delete unused code completely.
+9. **Semantic Versioning** — MAJOR.MINOR.PATCH. Breaking changes require migration guide. Deprecation warnings precede removal.
+
+### Feature Directory Convention
+
+```
+specs/
+└── {###}-{feature-name}/        # e.g. 006-platform-component-expansion
+    ├── spec.md                  # MANDATORY: Feature specification
+    ├── research.md              # Competitive analysis, alternatives
+    ├── plan.md                  # Implementation plan (bite-sized tasks)
+    ├── tasks.md                 # Granular task list (T001, T002...)
+    ├── data-model.md            # Entity definitions & relationships
+    ├── quickstart.md            # Quick start guide
+    ├── ux-design.md             # UX flows (if UI project)
+    ├── infrastructure.md        # Infra requirements (if needed)
+    └── contracts/               # API endpoint definitions (OpenAPI)
+```
+
+### Quality Gates (All Must Pass Before Merge)
+
+| Gate | Requirement |
+|------|-------------|
+| Tests | All tests pass in all 3 SDKs |
+| Types | Type checking passes (mypy, tsc, javac) |
+| Fresh Evidence | Verification commands run fresh, not cached |
+| Security | No known vulnerable dependencies |
+| Spec Compliance | Implementation matches spec acceptance criteria |
+| Documentation | Public APIs documented |
+
+### When to Skip the Lifecycle
+
+- **Trivial changes** (typo fix, single-line bug fix, doc update): Skip spec phase, commit directly.
+- **Everything else**: Full lifecycle. If it touches multiple files, adds an API, or requires design decisions — you need a spec.
+
 ## Adding New Modules
 
-Follow the SDD Workflow in `.claude/workflows/SDD-WORKFLOW.md`:
+Follow the speckit lifecycle above. The implementation phase for SDK modules specifically requires:
 
 1. Create YAML model in `models/{module}/`
 2. Create OpenAPI spec in `openapi/{module}/`
-3. Implement in Python with tests
-4. Implement in Node.js with tests
-5. Implement in Java with tests
+3. Implement in Python with tests (TDD)
+4. Implement in Node.js with tests (TDD)
+5. Implement in Java with tests (TDD)
 6. Update exports in all packages
 
 ## Skills Available
@@ -182,10 +249,10 @@ Review skills in `.claude/skills/`:
 
 ## Workflows
 
-See `.claude/workflows/`:
-
-- **DEVELOPMENT-WORKFLOW.md**: Step-by-step module development
-- **SDD-WORKFLOW.md**: Specification-driven development
+- **Speckit Lifecycle**: See "Speckit Lifecycle (MANDATORY)" section above — this is the primary development workflow
+- **Constitution**: `.specify/memory/constitution.md` — the 9 Iron Laws governing all development
+- **Templates**: `.specify/templates/` — spec, plan, tasks, checklist, and research templates
+- **Scripts**: `.specify/scripts/bash/` — feature init, plan setup, prerequisites check
 
 ## Testing Requirements
 
@@ -218,3 +285,10 @@ feat(webhooks): add webhook signature verification
 - Add signature verification utility
 - Add tests for edge cases
 ```
+
+## Active Technologies
+- TypeScript 5+, Node.js 18+ + NextAuth v5-beta (all 5 products already use this), Zod (runtime validation), jose (JWT verification) (007-shared-platform-foundation)
+- PostgreSQL (100% alignment across all 5 products), dual ORM support (Prisma 5/6 for Dream Team + HireWise, Drizzle for Payroll + Books + Learn) (007-shared-platform-foundation)
+
+## Recent Changes
+- 007-shared-platform-foundation: Added TypeScript 5+, Node.js 18+ + NextAuth v5-beta (all 5 products already use this), Zod (runtime validation), jose (JWT verification)
