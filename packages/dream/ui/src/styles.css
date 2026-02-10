@@ -33,6 +33,20 @@
   --dream-color-input: 214 32% 91%;
   --dream-color-ring: 222 84% 5%;
 
+  /* Semantic colors (hex — for non-Tailwind usage) */
+  --dream-color-success: #22C55E;
+  --dream-color-warning: #F59E0B;
+  --dream-color-error: #EF4444;
+
+  /* Surface colors */
+  --dream-color-surface: #FFFFFF;
+  --dream-color-page-bg: #F8FAFC;
+
+  /* Text colors */
+  --dream-color-text-primary: #0F172A;
+  --dream-color-text-secondary: #64748B;
+  --dream-color-text-muted: #94A3B8;
+
   /* Radii */
   --dream-radius-sm: 0.25rem;
   --dream-radius-md: 0.375rem;
@@ -40,7 +54,7 @@
   --dream-radius-xl: 0.75rem;
 
   /* Typography */
-  --dream-font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --dream-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --dream-font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
 }
 
@@ -72,4 +86,131 @@
   --dream-color-border: 217 33% 18%;
   --dream-color-input: 217 33% 18%;
   --dream-color-ring: 213 31% 91%;
+
+  --dream-color-surface: #1E293B;
+  --dream-color-page-bg: #0F172A;
+  --dream-color-text-primary: #F1F5F9;
+  --dream-color-text-secondary: #94A3B8;
+  --dream-color-text-muted: #64748B;
+}
+
+/* ──────────────────────────────────────────────
+ * Base Layer
+ * ────────────────────────────────────────────── */
+
+@layer base {
+  * {
+    border-color: hsl(var(--dream-color-border));
+  }
+
+  body {
+    background-color: var(--dream-color-page-bg);
+    color: var(--dream-color-text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Tabular numbers for data-heavy layouts */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ──────────────────────────────────────────────
+ * Component Layer
+ * ────────────────────────────────────────────── */
+
+@layer components {
+  /* Button variants */
+  .dream-btn-primary {
+    @apply bg-primary text-white rounded-md px-4 py-2 text-sm font-medium transition-colors;
+  }
+  .dream-btn-primary:hover {
+    opacity: 0.9;
+  }
+
+  .dream-btn-secondary {
+    @apply border border-primary text-primary rounded-md px-4 py-2 text-sm font-medium transition-colors;
+  }
+  .dream-btn-secondary:hover {
+    @apply bg-muted;
+  }
+
+  .dream-btn-ghost {
+    @apply text-muted-foreground rounded-md px-4 py-2 text-sm font-medium transition-colors;
+  }
+  .dream-btn-ghost:hover {
+    @apply bg-muted text-foreground;
+  }
+
+  .dream-btn-destructive {
+    @apply bg-destructive text-destructive-foreground rounded-md px-4 py-2 text-sm font-medium transition-colors;
+  }
+  .dream-btn-destructive:hover {
+    opacity: 0.9;
+  }
+
+  /* Card */
+  .dream-card {
+    @apply rounded-lg border bg-card shadow-sm;
+  }
+
+  /* Input */
+  .dream-input {
+    @apply h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm;
+  }
+  .dream-input::placeholder {
+    @apply text-muted-foreground;
+  }
+  .dream-input:focus {
+    @apply border-ring outline-none ring-2 ring-ring/20;
+  }
+
+  /* Badge variants */
+  .dream-badge {
+    @apply inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium;
+  }
+
+  .dream-badge-success {
+    @apply bg-green-100 text-green-700;
+  }
+
+  .dream-badge-warning {
+    @apply bg-amber-100 text-amber-700;
+  }
+
+  .dream-badge-error {
+    @apply bg-red-100 text-red-700;
+  }
+
+  .dream-badge-info {
+    @apply bg-blue-100 text-blue-700;
+  }
+
+  .dream-badge-neutral {
+    @apply bg-muted text-muted-foreground;
+  }
+}
+
+/* ──────────────────────────────────────────────
+ * Utility Layer
+ * ────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: dream-fade-in 200ms ease-out;
+  }
+
+  @keyframes dream-fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 }
